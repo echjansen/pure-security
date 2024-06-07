@@ -15,6 +15,13 @@ import getpass
 
 GPG_DEBUG = False
 
+BLACK = "\033[0;30m"
+RED = "\033[0;31m"
+GREEN = "\033[0;32m"
+YELLOW = "\033[0;93m"
+BLUE = "\033[0;34m"
+END = "\033[0m"
+
 def gpg_create_gnupghome():
     """
     Create a temporary directory which will be cleared on reboot,
@@ -101,6 +108,10 @@ def gpg_print_keys_list():
 
 if __name__ == '__main__':
     os.system("reset")
+    print(f"{YELLOW}============================================================{END}")
+    print(f"{YELLOW}* Create new GPG key pair.                                 *{END}")
+    print(f"{YELLOW}* Inlcudes a Master [C] and subkeys [S][E][A]              *{END}")
+    print(f"{YELLOW}============================================================{END}")
 
     # Setup user information
     GPG_GNUPGHOME = gpg_create_gnupghome()
@@ -119,15 +130,17 @@ if __name__ == '__main__':
     if GPG_EXPIRATION == "":
         GPG_EXPIRATION = "2y"
 
-    print("\n")
-    print("============================================================")
-    print("* Selected values for GPG Key creation.                    *")
-    print("============================================================")
-    print("GNUPGHOME:  " + GPG_GNUPGHOME)
-    print("IDENTITY:   " + GPG_IDENTITY)
-    print("KEY TYPE:   " + GPG_KEYTYPE)
-    print("EXPIRATION: " + GPG_EXPIRATION)
+    os.system("reset")
+    print(f"{YELLOW}============================================================{END}")
+    print(f"{YELLOW}* Selected values for GPG Key creation:                    *{END}")
+    print(f"{YELLOW}============================================================{END}")
+    print(f"{GREEN} GNUPGHOME:  {END}" + GPG_GNUPGHOME)
+    print(f"{GREEN} IDENTITY:   {END}" + GPG_IDENTITY)
+    print(f"{GREEN} KEY TYPE:   {END}" + GPG_KEYTYPE)
+    print(f"{GREEN} EXPIRATION: {END}" + GPG_EXPIRATION)
     if input("Continue (y/n)?") != "y": exit()
+
+    os.system("reset")
 
     # Create GPG keys
     gpg_create_certify_key(GPG_IDENTITY, GPG_KEYTYPE, GPG_PASSWORD)
@@ -142,9 +155,9 @@ if __name__ == '__main__':
     gpg_export_secret_subkey(GPG_KEYID, GPG_GNUPGHOME, GPG_PASSWORD)
     gpg_export_public_key(GPG_KEYID, GPG_GNUPGHOME, GPG_PASSWORD)
 
-    print("\n")
-    print("============================================================")
-    print("* Keys created and backup files created.                   *")
-    print("* Check " + GPG_GNUPGHOME + " for backup files.            *")
-    print("============================================================")
+    os.system("reset")
+    print(f"{YELLOW}============================================================{END}")
+    print(f"{YELLOW}* Keys created and backup files created.                   *{END}")
+    print(f"{YELLOW}* Check GPG_GNUPGHOME for backup files.                    *{END}")
+    print(f"{YELLOW}============================================================{END}")
     gpg_print_keys_list()
