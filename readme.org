@@ -1,0 +1,7 @@
+* === P U R E - S E C U R I T Y ===
+This repository contains usefull information regarding the use of security, mainly used on (Arch) Linux systems.
+It further conatains a set of scripts that are usefull to:
+
+- ~gpg-provision~     Create a new set of GPG keys with [C] Certicate master and [S] Sign, [E] Encrypt and [A] Authorize subkeys.
+- ~onlykey-wipe~      Clear all RSA and ECC registers from OnlyKey device.
+- ~onlykey-provision~ Transfer subkeys (created with gpg-provision) to OnlyKey device.
