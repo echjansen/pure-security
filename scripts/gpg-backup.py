@@ -144,22 +144,23 @@ def main():
     parser = argparse.ArgumentParser(
         description='Backup GnuPG private and public keys to USB backup drive.\n\n'
                     'This script requires three required argumenents.\n'
-                    '1. The directory where the GnuPG keychain is stored ($GNUPGHOME).\n'
-                    '2. The path to the USB device in ~/dev/sdx~ format.\n'
+                    '1. The full path to the GnuPG keychain is stored ($GNUPGHOME).\n'
+                    '2. The full path to the public key in armored format ~public-key.asc~.\n'
+                    '3. The path to the USB device in ~/dev/sdx~ format.\n'
                     '   Use the ~lsblk~ command to list available USB devices.\n'
-                    '3. The public key in armored format ~public-key.asc~.\n'
                     'This script must be executed as root ~sudo gpg-backup~.\n'
                     'Only run this on a secure and trusted system.',
         epilog='''Backup GnuPG keys to USB device example:
-        sudo ./gpgbackup.py $GNUPGHOME /dev/sbx public.asc
+        sudo ./gpgbackup.py $GNUPGHOME public.asc /dev/sbx
         ''',
         formatter_class=argparse.RawDescriptionHelpFormatter)
+
     parser.add_argument('gnupghome', type=str,
                         help="path to the GnuPG path")
-    parser.add_argument('usb', type=str,
-                        help="path to the USB device in /dev/sdx format")
     parser.add_argument('pubkey', type=str,
                         help="Public key exported using ~ gpg -a --export public.asc")
+    parser.add_argument('usb', type=str,
+                        help="path to the USB device in /dev/sdx format")
     args = parser.parse_args()
 
     os.system("reset")
