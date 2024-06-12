@@ -2,6 +2,7 @@
 This repository contains usefull information regarding the use of security, mainly used on (Arch) Linux systems.
 It further conatains a set of scripts that are usefull to:
 
-- ~gpg-provision~     Create a new set of GPG keys with [C] Certicate master and [S] Sign, [E] Encrypt and [A] Authorize subkeys.
+- ~gpg-provision~     Create a new set of GPG keys with [C] Certicate master and [S] Sign, [E] Encrypt and [A] Authenticate subkeys.
+- ~gpg-backup~        Create a USB backup device with two partitians. An encrypted partion (LUKS) where the entire key chain is stored. A standard partition where the publick keys are stored.
 - ~onlykey-wipe~      Clear all RSA and ECC registers from OnlyKey device.
 - ~onlykey-provision~ Transfer subkeys (created with gpg-provision) to OnlyKey device.
