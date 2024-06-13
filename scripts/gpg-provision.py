@@ -22,6 +22,21 @@ YELLOW = "\033[0;93m"
 BLUE = "\033[0;34m"
 END = "\033[0m"
 
+def input_password():
+    """
+    User to provide a password twice, and the must be identical
+    """
+
+    password = getpass.getpass(f"{YELLOW}Please provide a password to protect the secret key chain: {END}")
+    password2 = getpass.getpass(f"{YELLOW}Please repeat the password: {END}")
+    if password == password2:
+        if len(password)<9:
+            if input(f"{YELLOW}The password provided is very short. Do you wish to continue (y/n)?{END}") != "y":
+                return None
+        return password
+    else:
+        return None
+
 def gpg_create_gnupghome():
     """
     Create a temporary directory which will be cleared on reboot,
@@ -118,8 +133,11 @@ if __name__ == '__main__':
     GPG_USER =  input("Real Name: ")
     GPG_EMAIL = input("Email: ")
     GPG_IDENTITY = '"' + GPG_USER + ' <' + GPG_EMAIL + '>"'
-    GPG_PASSWORD = getpass.getpass("Password: ")
-    GPG_KEYTYPE = input('Curve 25519 (1 = default), RSA (2): ')
+    GPG_PASSWORD = input_password()
+    if GPG_PASSWORD is None:
+        print(f"{RED}Passwords provided are not identical.{END}")
+        exit()
+    GPG_KEYTYPE = input('1. Curve 25519 (default), 2. RSA: ')
     if GPG_KEYTYPE  == '1':
         GPG_KEYTYPE = "25519"
     elif GPG_KEYTYPE == '2':
