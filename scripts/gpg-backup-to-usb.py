@@ -156,13 +156,35 @@ def copy_folder(source, destination):
 
     try:
         print(f"{GREEN}[ * ] Copying folder from: {END}" + source + f"{GREEN} to {END}" + destination)
-        subprocess.run(["cp", "-r", source, destination], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        subprocess.run(["cp", "-rv", source, destination], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
         copy_folder = True
     except subprocess.CalledProcessError as err:
         print(f"{RED}Could not copy folder from: {END}" + source + f"{RED} to {END}" + destination)
         print(err)
     finally:
         return copy_folder
+
+def copy_file(source, destination):
+    """
+    Copy file from ~source~ to ~destination~
+    Return True if successful
+    Return False if not successful
+    """
+
+    copy_file = False
+
+    pubkey_file = os.path.basename(source)
+    pubkey_path = os.path.join(destination, pubkey_file )
+    try:
+        print(f"{GREEN}[ * ] Copying file from: {END}" + source + f"{GREEN} to {END}" + destination)
+        subprocess.run(["cp", source, destination], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        subprocess.run(["chmod", "0444", pubkey_path], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        copy_file = True
+    except subprocess.CalledProcessError as err:
+        print(f"{RED}Could not copy file from: {END}" + source + f"{RED} to {END}" + destination)
+        print(err)
+    finally:
+        return copy_file
 
 def partition_create(device, partition_no, size):
     """
@@ -172,10 +194,6 @@ def partition_create(device, partition_no, size):
     """
 
     partition = None
-
-    if partition_no == 1:
-        if input(f"{RED}\nAll data on {END}" + device + f"{RED} will be deleted. Continue (y/n)?{END}") != "y":
-            exit()
 
     if partition_no == 1:
         print(f"{GREEN}[ * ] Creating new partition table for: {END}" + device)
@@ -331,6 +349,7 @@ def main():
     args = parser.parse_args()
 
     GNUPG_COPIED = False
+    PUBLIC_COPIED = False
     LUKS_PASSWORD = None
     LUKS_CREATED = False
     LUKS_PARTITION = None
@@ -348,9 +367,12 @@ def main():
 
     # Validate correct inputs
     USB_DRIVE = is_usb_drive(args.usb)
-    if  USB_DRIVE is None: exit()
+    if USB_DRIVE is None: exit()
     if is_gpg_path(args.gnupghome) is False: exit()
     if is_public_key(args.pubkey) is False: exit()
+
+    if input(f"{RED}\nAll data on {END}" + USB_DRIVE + f"{RED} will be deleted. Continue (y/n)?{END}") != "y":
+        exit()
 
     # Create Secret partition and copy gnupghome content
     LUKS_PASSWORD = input_password(8)
@@ -401,10 +423,12 @@ def main():
     PUBLIC_FOLDER = folder_create("/mnt/public")
     if PUBLIC_FOLDER is None: exit()
 
-    PUBLIC_MOUNTED = partition_mount(LUKS_PARTITION, LUKS_FOLDER)
+    PUBLIC_MOUNTED = partition_mount(PARTITION_PUBLIC, PUBLIC_FOLDER)
     if PUBLIC_MOUNTED is False: exit()
 
     # Do something
+    PUBLIC_COPIED = copy_file(args.pubkey, PUBLIC_FOLDER)
+    if PUBLIC_COPIED is False: exit()
 
     # Cleanup Secret partiton
     if PUBLIC_MOUNTED is True: partition_umount(PUBLIC_FOLDER)

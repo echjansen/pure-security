@@ -2,7 +2,78 @@
 This repository contains usefull information regarding the use of security, mainly used on (Arch) Linux systems.
 It further conatains a set of scripts that are usefull to:
 
-- ~gpg-provision~     Create a new set of GPG keys with [C] Certicate master and [S] Sign, [E] Encrypt and [A] Authenticate subkeys.
-- ~gpg-backup~        Create a USB backup device with two partitians. An encrypted partion (LUKS) where the entire key chain is stored. A standard partition where the publick keys are stored.
-- ~onlykey-wipe~      Clear all RSA and ECC registers from OnlyKey device.
-- ~onlykey-provision~ Transfer subkeys (created with gpg-provision) to OnlyKey device.
+- ~gpg-provision~       Create a new set of GPG keys with [C] Certicate master and [S] Sign, [E] Encrypt and [A] Authenticate subkeys.
+- ~gpg-backup-to-sub~   Create a USB backup where the GnuPG key chain (LUKS) and public keys are stored.
+- ~onlykey-wipe~        Clear all RSA and ECC registers from OnlyKey device.
+- ~onlykey-provision~   Transfer subkeys (created with gpg-provision) to OnlyKey device.
+
+** gpg-provision
+
+** gpg-backup-to-usb
+
+usage: gpg-backup-to-usb.py [-h] usb gnupghome pubkey
+
+Backup GnuPG private and public keys to USB backup drive.
+
+This script requires three required argumenents.
+1. The connected USB device in ~sdx~ format.
+   Use the ~lsblk~ command to list available USB devices.
+2. The full path to the GnuPG keychain is stored ($GNUPGHOME).
+3. The full path to the public key in armored format ~public-key.asc~.
+This script must be executed as root ~sudo gpg-backup~.
+Only run this on a secure and trusted system.
+
+positional arguments:
+  usb         path to the USB device in sdx format
+  gnupghome   path to the GnuPG path
+  pubkey      Public key exported using ~ gpg -a --export public.asc
+
+options:
+  -h, --help  show this help message and exit
+
+Backup GnuPG keys to USB device example:
+        sudo ./gpgbackup.py sda $GNUPGHOME public.asc
+
+#+begin_src
+    =====================================================
+    Backup GnuPG Key-chain to USB Drive:
+    =====================================================
+
+    All data on /dev/sda will be deleted. Continue (y/n)?y
+    Please provide a password to protect the secret key partition:
+    Please repeat the password:
+    The password provided is very short. Do you wish to continue (y/n)?y
+
+    Archiving GNUPGHOME in LUKS partition on USB.
+    =============================================
+    [ * ] Creating new partition table for: /dev/sda
+    [ * ] Creating partition: /dev/sda1
+    [ * ] Creating LUKS partition: /dev/sda1
+    [ * ] Opening LUKS partition: SECRET
+    [ * ] Formatting partition: /dev/mapper/SECRET
+    [ * ] Creating folder /mnt/secret
+    [ * ] Mounting partition: /dev/mapper/SECRET to /mnt/secret
+    [ * ] Copying folder from: /tmp/gpg_ffl8x1vb/ to /mnt/secret
+    [ * ] Unmounting partition: /mnt/secret
+    [ * ] Removing folder: /mnt/secret
+    [ * ] Closing LUKS partition: /dev/mapper/SECRET
+
+    Copying GNUPG public key to partition on USB.
+    =============================================
+    [ * ] Creating partition: /dev/sda2
+    [ * ] Formatting partition: /dev/sda2
+    [ * ] Creating folder /mnt/public
+    [ * ] Mounting partition: /dev/sda2 to /mnt/public
+    [ * ] Copying file from: /tmp/gpg_ffl8x1vb/77C76AEF8DC59FF7.public.key.asc to /mnt/public
+    [ * ] Unmounting partition: /mnt/public
+    [ * ] Removing folder: /mnt/public
+
+    =====================================================
+     GPG Key Backup to USB Drive completed successfully.
+    =====================================================
+    Remove the USB device, and store it in a save location.
+    The USB contains two partitions:
+    a. An encrypted partition - created with LUKS - that contains the complete GNUPGHOME content and exported key files.
+    b. A standard partition that contains the exported public key file for distribution and publication.
+       This partition also contains the scripts in case a reverse engineering is required!
+#+end_src
