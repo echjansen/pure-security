@@ -23,10 +23,20 @@ def message_complete():
     print(f"{GREEN} GPG Key Backup to USB Drive completed successfully. {END}")
     print(f"{GREEN}====================================================={END}")
     print(f"{YELLOW}Remove the USB device, and store it in a save location.{END}")
-    print(f"{YELLOW}The USB has now two partitions:{END}")
-    print(f"{YELLOW}a. An encrypted partition created with LUKS that contains the complete GNUPGHOME content and exporte key files.{END}")
-    print(f"{YELLOW}b. An standard partition that contains the exported public key file for distribution and publication.{END}")
+    print(f"{YELLOW}The USB contains two partitions:{END}")
+    print(f"{YELLOW}a. An encrypted partition - created with LUKS - that contains the complete GNUPGHOME content and exported key files.{END}")
+    print(f"{YELLOW}b. A standard partition that contains the exported public key file for distribution and publication.{END}")
     print(f"{YELLOW}   This partition also contains the scripts in case a reverse engineering is required!{END}")
+
+def is_sudo():
+    """
+    Check if executed with root priviledges
+    Return True if root priviledges
+    Return False if no root priviledges
+    """
+    if os.getuid() != 0:
+        print(f"{RED} This script must be executed with root priviledges (sudo){END}")
+        return False
 
 def is_usb_drive(usb):
     """
@@ -63,7 +73,7 @@ def is_gpg_path(gnupghome):
 
 def is_public_key(pubkey):
     """
-    Validate is ~pubkey~ is a valid GnuPG public key
+    Validate is ~pubkey~ is a valid GnuPG public key (rudimentary)
     Return True if it is
     Return False if it is not
     """
@@ -91,126 +101,210 @@ def input_password(length):
         print(f"{RED}Passwords entered are not identical!{END}")
         return None
 
-def partition_create(device, partition_no):
+def folder_create(folder):
     """
-    Create a new partition on devices
-    Return partition path if successfull
-    Return None not successfull
+    Create a folder.
+    Return folder path if successful
+    Return None of not successful
     """
 
-    partiton = None
-
-    if input(f"{RED}\nAll data on {END}" + device + f"{RED} will be deleted. Continue (y/n)?{END}") != "y":
-        return None
-
-    if partition_no == 1:
-        print(f"{GREEN}\nCreating new partiton table ...{END}")
-        commands = f"g\nw"
-        subprocess.run(["fdisk", str(device)], input =f"{commands}", stderr = subprocess.PIPE, text=True, check=True)
+    folder_create = None
 
     try:
-        print(f"{GREEN}\nCreating partiton 20Mb for LUKS secret ...{END}")
-        commands = f"n\n\n\n+20M\nw"
-        subprocess.run(["fdisk", str(device)], input =f"{commands}", stderr = subprocess.PIPE, text=True, check=True)
-        partition = device + partition_no
-    except:
-        print(f"{RED}Could not create partition: {END}" + str(partiton_no))
+        print(f"{GREEN}[ * ] Creating folder {END}" + folder)
+        subprocess.run(["mkdir", folder], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        folder_create = folder
+    except subprocess.CalledProcessError as err:
+        print(f"{RED}Could not create folder: {END}" + folder)
+        print(err)
+    finally:
+        return folder_create
+
+def folder_remove(folder):
+    """
+    Remove a folder.
+    If the folder exists, get confirmation on removal prior.
+    Return True if successful
+    Return False of not successful
+    """
+
+    folder_remove = False
+
+    try:
+        # Remove before creation
+        if os.path.exists(folder) is True:
+            print(f"{GREEN}[ * ] Removing folder: {END}" + folder)
+            subprocess.run(["rm", "-rf", folder], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+            folder_remove = True
+        else:
+            folder_remove = True
+
+    except subprocess.CalledProcessError as err:
+        print(f"{RED}Could not remove folder: {END}" + folder)
+        print(err)
+    finally:
+        return folder_remove
+
+def copy_folder(source, destination):
+    """
+    Copy folder from ~source~ to ~destination~
+    Return True if successful
+    Return False if not successful
+    """
+
+    copy_folder = False
+
+    try:
+        print(f"{GREEN}[ * ] Copying folder from: {END}" + source + f"{GREEN} to {END}" + destination)
+        subprocess.run(["cp", "-r", source, destination], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        copy_folder = True
+    except subprocess.CalledProcessError as err:
+        print(f"{RED}Could not copy folder from: {END}" + source + f"{RED} to {END}" + destination)
+        print(err)
+    finally:
+        return copy_folder
+
+def partition_create(device, partition_no, size):
+    """
+    Create a new partition on devices
+    Return partition path if successful
+    Return None not successful
+    """
+
+    partition = None
+
+    if partition_no == 1:
+        if input(f"{RED}\nAll data on {END}" + device + f"{RED} will be deleted. Continue (y/n)?{END}") != "y":
+            exit()
+
+    if partition_no == 1:
+        print(f"{GREEN}[ * ] Creating new partition table for: {END}" + device)
+        commands = f"g\nw"
+        subprocess.run(["fdisk", str(device)], input =f"{commands}", stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+
+    try:
+        print(f"{GREEN}[ * ] Creating partition: {END}" + device + str(partition_no))
+        #commands = f"n\n\n\n+20M\nw"
+        commands = f"n\n\n\n+" + size + "\nw"
+        subprocess.run(["fdisk", str(device)], input =f"{commands}", stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        partition = device + str(partition_no)
+    except subprocess.CalledProcessError as err:
+        print(f"{RED}Could not create partition: {END}" + str(partition_no))
+        print(err)
     finally:
         return partition
 
-def partition_mount_luks(partiton, vaultname, password):
+def luks_create(partition, password):
     """
-    Format and mount a partition in LUKS
-    Return LUKS path if successfull
-    Return None if not successfull
-    LUKS"""
+    Create a LUKS partition
+    Return True if successful
+    Return False if not successful
+    """
 
-    luks = None
+    luks_create = False
 
     try:
-        print(f"{GREEM}\nFormatting LUKS partiton ...{END}")
-        subprocess.run(["cryptsetup", "-q", "luksFormat", str(partition)], input =f"{password}", stderr = subprocess.PIPE, text=True, check=True)
-
-        print(f"{GREEM}\nMounting LUKS partition ...{END}")
-        subprocess.run(["cryptsetup", "-q", "luksOpen", str(partition), vaultname], input =f"{password}", stderr = subprocess.PIPE, text=True, check=True)
-        luks = "/dev/mapper/" + vaultname
-    except:
-        print(f"{RED}Could not mount LUKS partition: {END}" + partition)
+        print(f"{GREEN}[ * ] Creating LUKS partition: {END}" + partition)
+        subprocess.run(["cryptsetup", "-q", "luksFormat", str(partition)], input =f"{password}", stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        luks_create = True
+    except subprocess.CalledProcessError as err:
+        print(f"{RED}Could not create LUKS partition: {END}" + partition)
+        print(err)
     finally:
-        return luks
+        return luks_create
 
-def partiton_format(format, partition, name):
+def luks_open(partition, lukslabel, password):
+    """
+    Open a LUKS partition
+    Return LUKS partition if successful
+    Return None if not successful
+    """
+
+    luks_open = None
+
+    try:
+        print(f"{GREEN}[ * ] Opening LUKS partition: {END}" + lukslabel)
+        subprocess.run(["cryptsetup", "-q", "luksOpen", str(partition), lukslabel], input =f"{password}", stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        luks_open = "/dev/mapper/" + lukslabel
+    except subprocess.CalledProcessError as err:
+        print(f"{RED}Could not open LUKS partition: {END}" + partition)
+        print(err)
+    finally:
+        return luks_open
+
+def luks_close(partition):
+    """
+    Close a LUKS partition
+    Return True if successful
+    Return False if not successful
+    """
+
+    luks_close = False
+
+    try:
+        print(f"{GREEN}[ * ] Closing LUKS partition: {END}" + partition)
+        subprocess.run(["cryptsetup", "luksClose", str(partition)], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        luks_close = True
+    except:
+        print(f"{RED}Could not close LUKS partition: {END}" + partition)
+    finally:
+        return luks_close
+
+def partition_mount(partition, mountfolder):
+    """
+    Mount ~partition~ to ~mountfolder~
+    Return True if successful
+    Return False if not successful
+    """
+
+    mounted = False
+
+    try:
+        print(f"{GREEN}[ * ] Mounting partition: {END}" + partition + f"{GREEN} to {END}" + mountfolder)
+        subprocess.run(["mount", partition, mountfolder], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        mounted = True
+    except subprocess.CalledProcessError as err:
+        print(f"{RED}Could not mount partition: {END}" + partition + f"{RED} to {END}" + mountfolder)
+        print(err)
+    finally:
+        return mounted
+
+def partition_umount(mountfolder):
+    """
+    Un-mount ~partition~
+    Return True if successful
+    Return False if not successful
+    """
+
+    partition_umount = False
+    try:
+        print(f"{GREEN}[ * ] Unmounting partition: {END}" + mountfolder)
+        subprocess.run(["umount", mountfolder], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        partition_umount = True
+    except subprocess.CalledProcessError as err:
+        print(f"{RED}Could not un-mount folder: {END}" + mountfolder)
+        print(err)
+    finally:
+        return partition_umount
+
+def partition_format(format, partition, label):
     """
     Format partition
-    Return True if successfull
-    Return False if not successfull
+    Return True if successful
+    Return False if not successful
     """
 
-    format = False
+    partition_format = False
 
     try:
-        print(f"{GREEN}\nFormatting partition ...{END}")
-        subprocess.run([format, partition, "-L", name], stderr = subprocess.PIPE, text=True, check=True)
-        format = True
-    except:
+        print(f"{GREEN}[ * ] Formatting partition: {END}" + partition)
+        subprocess.run([format, partition, "-L", label], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        partition_format = True
+    except subprocess.CalledProcessError as err:
         print(f"{RED}Could not format partition: {END}" + partition)
+        print(err)
     finally:
-        return format
-
-def old_stuff(device, partition_no, password):
-    """
-    Create a LUKS partiton on ~device~
-    Return full path if successfull
-    Return None is not succesfull
-    """
-
-    luks_is_mounted = False
-    luks_is_open = False
-    luks_has_folder = False
-
-    try:
-        # if input(f"{RED}\nAll data on {END}" + device + f"{RED} will be deleted. Continue (y/n)?{END}") != "y":
-        #     return None:
-
-        # print(f"{GREEN}\nCreating new partiton table ...{END}")
-        # commands = f"g\nw"
-        # subprocess.run(["fdisk", str(device)], input =f"{commands}", stderr = subprocess.PIPE, text=True, check=True)
-
-        # print(f"{GREEN}\nCreating partiton 20Mb for LUKS secret ...{END}")
-        # commands = f"n\n\n\n+20M\nw"
-        # if subprocess.run(["fdisk", str(device)], input =f"{commands}", stderr = subprocess.PIPE, text=True, check=True)
-        # partition_luks = device + partition_no
-
-        # print(f"{GREEM}\nFormatting the LUKS partition ...{END}")
-        # subprocess.run(["cryptsetup", "-q", "luksFormat", str(partition_luks)], input =f"{password}", stderr = subprocess.PIPE, text=True, check=True)
-
-        # print(f"{GREEM}\nMounting the LUKS partition ...{END}")
-        # luks_open = subprocess.run(["cryptsetup", "-q", "luksOpen", str(partition_luks), "gnupg-secret"], input =f"{password}", stderr = subprocess.PIPE, text=True, check=True)
-
-        print(f"{GREEN}\nCreating ext2 filesystem on LUKS partition ...{END}")
-        subprocess.run(["mkfs.ext2", "/dev/mapper/gnupg-secret", "-L", "GNUPG"], stderr = subprocess.PIPE, text=True, check=True)
-
-        print(f"{GREEM}\nMount the filesystem on LUKS partition ...{END}")
-        if os.path.exists("/mnt/secret") is True:
-            subprocess.run(["rm", "-rf", "/mnt/secret"], stderr = subprocess.PIPE, text=True, check=True)
-        subprocess.run(["mkdir", "/mnt/secret"], stderr = subprocess.PIPE, text=True, check=True)
-        luks_mounted = subprocess.run(["mount", "/dev/mapper/gnupg-secret", "/mnt/secret"], stderr = subprocess.PIPE, text=True, check=True)
-
-        print(f"{YELLOW}\nCopy GNUPG secret keys and revocation certificate ...{END}")
-        subprocess.run(["cp", "-av", str(gnupghome), "/mnt/secret/"], stderr = subprocess.PIPE, text=True, check=True)
-
-    except subprocess.CalledProcessError as error:
-        print(f"{RED}An error occured creating the secret partiton: {END}\n")
-        print(error)
-
-    finally:
-            print(f"{YELLOW}\nCleaning up the Secret partition.{END}")
-            if luks_mounted is False: subprocess.run(["umount", "/mnt/secret"], stderr = subprocess.PIPE, text=True, check=True)
-            if luks_open is False: subprocess.run(["cryptsetup", "luksClose", "gnupg-secret"], stderr = subprocess.PIPE, text=True, check=True)
-            if luks_folder is False: subprocess.run(["rm", "-rf", "/mnt/secret/"], stderr = subprocess.PIPE, text=True, check=True)
-
-    return drive_path
-
+        return partition_format
 
 def main():
 
@@ -236,12 +330,21 @@ def main():
                         help="Public key exported using ~ gpg -a --export public.asc")
     args = parser.parse_args()
 
-    USB_DRIVE = None
+    GNUPG_COPIED = False
     LUKS_PASSWORD = None
+    LUKS_CREATED = False
     LUKS_PARTITION = None
-    PUBLIC_PARTITON = None
+    LUKS_FORMATTED = False
+    LUKS_MOUNTED = False
+    LUKS_FOLDER = None
+    PARTITION_SECRET = None
+    PARTITION_PUBLIC = None
+    USB_DRIVE = None
 
     message_start()
+
+    # Validate if executed as sudo
+    if is_sudo() == False: exit()
 
     # Validate correct inputs
     USB_DRIVE = is_usb_drive(args.usb)
@@ -249,23 +352,63 @@ def main():
     if is_gpg_path(args.gnupghome) is False: exit()
     if is_public_key(args.pubkey) is False: exit()
 
-
-    # Password for secret LUKS partition
+    # Create Secret partition and copy gnupghome content
     LUKS_PASSWORD = input_password(8)
     if LUKS_PASSWORD is None: exit()
 
-    # Create partitions
-    LUKS_PARTITION = partition_create(USB_DRIVE, 1)
+    print(f"\n{GREEN}Archiving GNUPGHOME in LUKS partition on USB.{END}")
+    print(f"{GREEN}============================================={END}")
+
+    PARTITION_SECRET = partition_create(USB_DRIVE, 1, "50M")
+    if PARTITION_SECRET is None: exit()
+
+    LUKS_CREATED = luks_create(PARTITION_SECRET, LUKS_PASSWORD)
+    if LUKS_CREATED is False: exit()
+
+    LUKS_PARTITION = luks_open(PARTITION_SECRET, "SECRET", LUKS_PASSWORD)
     if LUKS_PARTITION is None: exit()
-    PUBLIC_PARTITON = create_partiton(USB_DRIVE, 2)
-    if PUBLIC_PARTITON is None: exit()
 
-    # Mount LUKS partition
-    LUKS_VAULT = partition_mount_luks(LUKS_PARTITION, "VAULT", LUKS_PASSWORD)
-    if LUKS_VAULT is None: exit()
+    LUKS_FORMATTED =  partition_format("mkfs.ext2", LUKS_PARTITION, "SECRET")
+    if LUKS_FORMATTED is False: exit()
 
-    # Formatting partitions
-    if partiton_format("mkfs.ext2", LUKS_VAULT, "SECRET") is False: exit()
+    if folder_remove("/mnt/secret") is False: exit()
+
+    LUKS_FOLDER = folder_create("/mnt/secret")
+    if LUKS_FOLDER is None: exit()
+
+    LUKS_MOUNTED = partition_mount(LUKS_PARTITION, LUKS_FOLDER)
+    if LUKS_MOUNTED is False: exit()
+
+    GNUPG_COPIED = copy_folder(args.gnupghome, LUKS_FOLDER)
+    if GNUPG_COPIED is False: exit()
+
+    # Cleanup Secret partiton
+    if LUKS_MOUNTED is True: partition_umount(LUKS_FOLDER)
+    if LUKS_MOUNTED is True: folder_remove(LUKS_FOLDER)
+    if LUKS_PARTITION is not None: luks_close(LUKS_PARTITION)
+
+    print(f"\n{GREEN}Copying GNUPG public key to partition on USB.{END}")
+    print(f"{GREEN}============================================={END}")
+
+    PARTITION_PUBLIC = partition_create(USB_DRIVE, 2, "50M")
+    if PARTITION_PUBLIC is None: exit()
+
+    PUBLIC_FORMATTED =  partition_format("mkfs.ext2", PARTITION_PUBLIC, "PUBLIC")
+    if PUBLIC_FORMATTED is False: exit()
+
+    if folder_remove("/mnt/public") is False: exit()
+
+    PUBLIC_FOLDER = folder_create("/mnt/public")
+    if PUBLIC_FOLDER is None: exit()
+
+    PUBLIC_MOUNTED = partition_mount(LUKS_PARTITION, LUKS_FOLDER)
+    if PUBLIC_MOUNTED is False: exit()
+
+    # Do something
+
+    # Cleanup Secret partiton
+    if PUBLIC_MOUNTED is True: partition_umount(PUBLIC_FOLDER)
+    if PUBLIC_MOUNTED is True: folder_remove(PUBLIC_FOLDER)
 
     message_complete()
 
