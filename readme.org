@@ -9,6 +9,17 @@ It further conatains a set of scripts that are usefull to:
 
 ** gpg-provision
 
+usage:
+#+begin_src shell
+  gpg-provision
+#+end_src
+
+This scripts provisions a new GPG according to the method described in 'drduh' guide.
+The script does not created a GPG configuration on this computer, instead it creates
+a configuration to be:
+1. Taken offline (full set of armoured files)
+2. Transfered to a smartcard such as OnlyKey or YubiKey
+
 #+begin_src
 ============================================================
 Create new GPG key pair.
@@ -55,7 +66,10 @@ ssb   ed25519/0xBA403E26A834F226 2024-06-14 [A] [expires: 2026-06-14]
 
 ** gpg-backup-to-usb
 
-usage: gpg-backup-to-usb.py [-h] usb gnupghome pubkey
+usage:
+#+begin_src shell
+  gpg-backup-to-usb.py [-h] usb gnupghome pubkey
+#+end_src
 
 Backup GnuPG private and public keys to USB backup drive.
 

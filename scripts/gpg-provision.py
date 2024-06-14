@@ -148,7 +148,6 @@ if __name__ == '__main__':
     if GPG_EXPIRATION == "":
         GPG_EXPIRATION = "2y"
 
-    os.system("reset")
     print(f"{YELLOW}============================================================{END}")
     print(f"{YELLOW}* Selected values for GPG Key creation:                    *{END}")
     print(f"{YELLOW}============================================================{END}")
@@ -157,8 +156,6 @@ if __name__ == '__main__':
     print(f"{GREEN} KEY TYPE:   {END}" + GPG_KEYTYPE)
     print(f"{GREEN} EXPIRATION: {END}" + GPG_EXPIRATION)
     if input("Continue (y/n)?") != "y": exit()
-
-    os.system("reset")
 
     # Create GPG keys
     gpg_create_certify_key(GPG_IDENTITY, GPG_KEYTYPE, GPG_PASSWORD)
@@ -173,9 +170,8 @@ if __name__ == '__main__':
     gpg_export_secret_subkey(GPG_KEYID, GPG_GNUPGHOME, GPG_PASSWORD)
     gpg_export_public_key(GPG_KEYID, GPG_GNUPGHOME, GPG_PASSWORD)
 
-    os.system("reset")
     print(f"{YELLOW}============================================================{END}")
-    print(f"{YELLOW}* Keys created and backup files created.                   *{END}")
+    print(f"{YELLOW}* Keys created and keys exported for backup                *{END}")
     print(f"{YELLOW}* Check GPG_GNUPGHOME for backup files.                    *{END}")
     print(f"{YELLOW}============================================================{END}")
     gpg_print_keys_list()
