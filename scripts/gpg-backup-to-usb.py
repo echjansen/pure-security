@@ -156,7 +156,7 @@ def copy_folder(source, destination):
 
     try:
         print(f"{GREEN}[ * ] Copying folder from: {END}" + source + f"{GREEN} to {END}" + destination)
-        subprocess.run(["cp", "-rv", source, destination], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        subprocess.run(["cp", "-av", source, destination], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
         copy_folder = True
     except subprocess.CalledProcessError as err:
         print(f"{RED}Could not copy folder from: {END}" + source + f"{RED} to {END}" + destination)
