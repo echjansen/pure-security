@@ -9,6 +9,50 @@ It further conatains a set of scripts that are usefull to:
 
 ** gpg-provision
 
+#+begin_src
+============================================================
+Create new GPG key pair.
+Inlcudes a Master [C] and subkeys [S][E][A]
+============================================================
+Real Name: user
+Email: user@domain.com
+Please provide a password to protect the secret key chain:
+Please repeat the password:
+The password provided is very short. Do you wish to continue (y/n)?y
+1. Curve 25519 (default), 2. RSA: 1
+Expiration in years (2y): 2y
+
+============================================================
+ Selected values for GPG Key creation:
+============================================================
+ GNUPGHOME:  /tmp/gpg_ajttd1g3
+ IDENTITY:   "user <user@domain.com>"
+ KEY TYPE:   25519
+ EXPIRATION: 2y
+Continue (y/n)?y
+
+gpg: keybox '/tmp/gpg_ajttd1g3/pubring.kbx' created
+gpg: /tmp/gpg_ajttd1g3/trustdb.gpg: trustdb created
+gpg: directory '/tmp/gpg_ajttd1g3/openpgp-revocs.d' created
+gpg: revocation certificate stored as '/tmp/gpg_ajttd1g3/openpgp-revocs.d/95D2F7D300BF2DDA30CD217C586757876553EB4C.rev'
+gpg: checking the trustdb
+gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+
+============================================================
+ Keys created and keys exported for backup
+ Check GPG_GNUPGHOME for backup files.
+============================================================
+/tmp/gpg_ajttd1g3/pubring.kbx
+-----------------------------
+sec   ed25519/0x586757876553EB4C 2024-06-14 [C]
+      Key fingerprint = 95D2 F7D3 00BF 2DDA 30CD  217C 5867 5787 6553 EB4C
+uid                   [ultimate] user <user@domain.com>
+ssb   ed25519/0x525446A57AA572A2 2024-06-14 [S] [expires: 2026-06-14]
+ssb   cv25519/0x92B2CDB6AB2377E1 2024-06-14 [E] [expires: 2026-06-14]
+ssb   ed25519/0xBA403E26A834F226 2024-06-14 [A] [expires: 2026-06-14]
+#+end_src
+
 ** gpg-backup-to-usb
 
 usage: gpg-backup-to-usb.py [-h] usb gnupghome pubkey
@@ -24,7 +68,7 @@ This script must be executed as root ~sudo gpg-backup~.
 Only run this on a secure and trusted system.
 
 positional arguments:
-  usb         path to the USB device in sdx format
+  usb         USB device in sdx format
   gnupghome   path to the GnuPG path
   pubkey      Public key exported using ~ gpg -a --export public.asc
 
