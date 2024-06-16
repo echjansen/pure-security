@@ -150,7 +150,15 @@ Restore GnuPG private and public keys from USB backup drive.
 
 Once the gpg-restore-from-sub script has been executed the secret and public partitions have been mounted, and accessible in ~/mnt/public~ for the public keys, and ~/mnt/secret~ for the private keys.
 
-To restore the entire keychain follow the following procedure:
+Restore the keychain, configuration, and trusted keys:
+#+begin_src
+  rm ~/.gnupg/                          # Remove the old keychain.
+  cp -r /mnt/secret/gpg_xxx ~/.gnupg    # Copy the stored keychain and configuration
+  gpg --list-secret-keys                # Validate if the GnuPG keychain is correct.
+  sudo reboot now                       # Reboot
+#+end_src
+
+Restore the keychain only - follow the following procedure:
 #+begin_src
   rm ~/.gnupg/                          # Remove the old keychain.
   gpg -k                                # Innitiate the gpg keychain.
