@@ -2,10 +2,11 @@
 This repository contains usefull information regarding the use of security, mainly used on (Arch) Linux systems.
 It further conatains a set of scripts that are usefull to:
 
-- ~gpg-provision~       Create a new set of GPG keys with [C] Certicate master and [S] Sign, [E] Encrypt and [A] Authenticate subkeys.
-- ~gpg-backup-to-sub~   Create a USB backup where the GnuPG key chain (LUKS) and public keys are stored.
-- ~onlykey-wipe~        Clear all RSA and ECC registers from OnlyKey device.
-- ~onlykey-provision~   Transfer subkeys (created with gpg-provision) to OnlyKey device.
+- ~gpg-provision~         Create a new set of GPG keys with [C] Certicate master and [S] Sign, [E] Encrypt and [A] Authenticate subkeys.
+- ~gpg-backup-to-sub~     Create a USB backup for the GnuPG key chain (LUKS) and public keys.
+- ~gpg-restore-from-usb~  Restore the USB backup created with ~gpg-backup-to-usb.
+- ~onlykey-wipe~          Clear all RSA and ECC registers from OnlyKey device.
+- ~onlykey-provision~     Transfer subkeys (created with gpg-provision) to OnlyKey device.
 
 ** gpg-provision
 
@@ -20,48 +21,49 @@ a configuration to be:
 1. Taken offline (full set of armoured files)
 2. Transfered to a smartcard such as OnlyKey or YubiKey
 
+script output:
 #+begin_src
-============================================================
-Create new GPG key pair.
-Inlcudes a Master [C] and subkeys [S][E][A]
-============================================================
-Real Name: user
-Email: user@domain.com
-Please provide a password to protect the secret key chain:
-Please repeat the password:
-The password provided is very short. Do you wish to continue (y/n)?y
-1. Curve 25519 (default), 2. RSA: 1
-Expiration in years (2y): 2y
+    ============================================================
+    Create new GPG key pair.
+    Inlcudes a Master [C] and subkeys [S][E][A]
+    ============================================================
+    Real Name: user
+    Email: user@domain.com
+    Please provide a password to protect the secret key chain:
+    Please repeat the password:
+    The password provided is very short. Do you wish to continue (y/n)?y
+    1. Curve 25519 (default), 2. RSA: 1
+    Expiration in years (2y): 2y
 
-============================================================
- Selected values for GPG Key creation:
-============================================================
- GNUPGHOME:  /tmp/gpg_ajttd1g3
- IDENTITY:   "user <user@domain.com>"
- KEY TYPE:   25519
- EXPIRATION: 2y
-Continue (y/n)?y
+    ============================================================
+     Selected values for GPG Key creation:
+    ============================================================
+     GNUPGHOME:  /tmp/gpg_ajttd1g3
+     IDENTITY:   "user <user@domain.com>"
+     KEY TYPE:   25519
+     EXPIRATION: 2y
+    Continue (y/n)?y
 
-gpg: keybox '/tmp/gpg_ajttd1g3/pubring.kbx' created
-gpg: /tmp/gpg_ajttd1g3/trustdb.gpg: trustdb created
-gpg: directory '/tmp/gpg_ajttd1g3/openpgp-revocs.d' created
-gpg: revocation certificate stored as '/tmp/gpg_ajttd1g3/openpgp-revocs.d/95D2F7D300BF2DDA30CD217C586757876553EB4C.rev'
-gpg: checking the trustdb
-gpg: marginals needed: 3  completes needed: 1  trust model: pgp
-gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+    gpg: keybox '/tmp/gpg_ajttd1g3/pubring.kbx' created
+    gpg: /tmp/gpg_ajttd1g3/trustdb.gpg: trustdb created
+    gpg: directory '/tmp/gpg_ajttd1g3/openpgp-revocs.d' created
+    gpg: revocation certificate stored as '/tmp/gpg_ajttd1g3/openpgp-revocs.d/95D2F7D300BF2DDA30CD217C586757876553EB4C.rev'
+    gpg: checking the trustdb
+    gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+    gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
 
-============================================================
- Keys created and keys exported for backup
- Check GPG_GNUPGHOME for backup files.
-============================================================
-/tmp/gpg_ajttd1g3/pubring.kbx
------------------------------
-sec   ed25519/0x586757876553EB4C 2024-06-14 [C]
-      Key fingerprint = 95D2 F7D3 00BF 2DDA 30CD  217C 5867 5787 6553 EB4C
-uid                   [ultimate] user <user@domain.com>
-ssb   ed25519/0x525446A57AA572A2 2024-06-14 [S] [expires: 2026-06-14]
-ssb   cv25519/0x92B2CDB6AB2377E1 2024-06-14 [E] [expires: 2026-06-14]
-ssb   ed25519/0xBA403E26A834F226 2024-06-14 [A] [expires: 2026-06-14]
+    ============================================================
+     Keys created and keys exported for backup
+     Check GPG_GNUPGHOME for backup files.
+    ============================================================
+    /tmp/gpg_ajttd1g3/pubring.kbx
+    -----------------------------
+    sec   ed25519/0x586757876553EB4C 2024-06-14 [C]
+          Key fingerprint = 95D2 F7D3 00BF 2DDA 30CD  217C 5867 5787 6553 EB4C
+    uid                   [ultimate] user <user@domain.com>
+    ssb   ed25519/0x525446A57AA572A2 2024-06-14 [S] [expires: 2026-06-14]
+    ssb   cv25519/0x92B2CDB6AB2377E1 2024-06-14 [E] [expires: 2026-06-14]
+    ssb   ed25519/0xBA403E26A834F226 2024-06-14 [A] [expires: 2026-06-14]
 #+end_src
 
 ** gpg-backup-to-usb
@@ -92,6 +94,7 @@ options:
 Backup GnuPG keys to USB device example:
         sudo ./gpgbackup.py sda $GNUPGHOME public.asc
 
+script output:
 #+begin_src
     =====================================================
     Backup GnuPG Key-chain to USB Drive:
@@ -131,6 +134,54 @@ Backup GnuPG keys to USB device example:
     =====================================================
     Remove the USB device, and store it in a save location.
     The USB contains two partitions:
+    a. An encrypted partition - created with LUKS - that contains the complete GNUPGHOME content and exported key files.
+    b. A standard partition that contains the exported public key file for distribution and publication.
+       This partition also contains the scripts in case a reverse engineering is required!
+#+end_src
+
+** gpg-restore-from-sub
+
+usage:
+#+begin_src shell
+  gpg-restore-from-usb.py [-h] usb
+#+end_src
+
+Restore GnuPG private and public keys from USB backup drive.
+
+Once the gpg-restore-from-sub script has been executed the secret and public partitions have been mounted, and accessible in ~/mnt/public~ for the public keys, and ~/mnt/secret~ for the private keys.
+
+To restore the entire keychain follow the following procedure:
+#+begin_src
+  rm ~/.gnupg/                          # Remove the old keychain.
+  gpg -k                                # Innitiate the gpg keychain.
+  gpg --import xxxx.public.key.asc      # Import the public keys from ~/mnt/secret~
+  gpg --import xxxx.private.master.asc  # Import the private keys from ~/mnt/secret~
+  gpg --list-secret-keys                # Validate if the GnuPG keychain is correct.
+  gpg --edit-key <KEY-ID>               # Edit the key and set the trust level to 5.
+  > trust
+  > 5
+  sudo reboot now                       # Reboot
+#+end_src
+
+script output:
+#+begin_src
+    =====================================================
+     Restore GnuPG Key-chain from USB Drive:
+    =====================================================
+    Please provide a password to protect the secret key partition:
+    [ * ] Opening LUKS partition: SECRET
+    [ * ] Removing folder: /mnt/secret
+    [ * ] Creating folder /mnt/secret
+    [ * ] Mounting partition: /dev/mapper/SECRET to /mnt/secret
+    [ * ] Removing folder: /mnt/public
+    [ * ] Creating folder /mnt/public
+    [ * ] Mounting partition: /dev/sdb2 to /mnt/public
+
+    =====================================================
+     Restore of GPG Key Backup from  USB completed.
+    =====================================================
+    Remove the USB device, and store it in a save location.
+    Two partitions are mounted:
     a. An encrypted partition - created with LUKS - that contains the complete GNUPGHOME content and exported key files.
     b. A standard partition that contains the exported public key file for distribution and publication.
        This partition also contains the scripts in case a reverse engineering is required!
