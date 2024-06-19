@@ -6,13 +6,18 @@ It further conatains a set of scripts that are usefull to:
 | Script               | Description                                                                                                    |
 |----------------------+----------------------------------------------------------------------------------------------------------------|
 | [[#gpg-provision][gpg-provision]]        | Create a new set of GPG keys with [C] Certicate master and [S] Sign, [E] Encrypt and [A] Authenticate subkeys. |
-| gpg-backup-to-usb    | Create a USB backup for the GnuPG key chain (LUKS) and public keys.                                            |
-| gpg-restore-from-usb | Restore the USB backup created with ~gpg-backup-to-usb.                                                        |
-| onlykey-wipe         | Clear all RSA and ECC registers from OnlyKey device.                                                           |
-| onlykey-provision    | Transfer subkeys (created with gpg-provision) to OnlyKey device.                                               |
+| [[#gpg-backup-to-usb][gpg-backup-to-usb]]    | Create a USB backup for the GnuPG key chain (LUKS) and public keys.                                            |
+| [[#gpg-restore-from-sub][gpg-restore-from-sub]] | Restore the USB backup created with ~gpg-backup-to-usb.                                                        |
+| [[#onlykey-provision][onlykey-provision]]    | Transfer subkeys (created with gpg-provision) to OnlyKey device.                                               |
+| onlykey-wipe         | Clear all RSA and ECC registers on OnlyKey device.                                                             |
 |----------------------+----------------------------------------------------------------------------------------------------------------|
 
 ** gpg-provision
+
+Usage:
+#+begin_src shell
+  gpg-provision
+#+end_src
 
 This scripts provisions a new GPG Key-chain according to best practices with the [C] Certify
 key on the Master key and [S][E][A] on sub-keys.
@@ -20,11 +25,6 @@ The script configures the keychain in a ~/tmp~ directory, rather than in the def
 The created GnuPG key-chain can then be:
 1. Taken offline for secure storage (USB) - see [[#gpg-backup-to-usb][gpg-backup-to-usb]]
 2. Transfered to a smartcard such as OnlyKey (see [[#onlykey-provision][onlykey-provision]]) or YubiKey
-
-Usage:
-#+begin_src shell
-  gpg-provision
-#+end_src
 
 Output:
 #+begin_src
@@ -73,14 +73,14 @@ Output:
 
 ** gpg-backup-to-usb
 
-usage:
+Usage:
 #+begin_src shell
   gpg-backup-to-usb.py [-h] usb gnupghome pubkey
 #+end_src
 
 Backup GnuPG private and public keys to USB backup drive.
 
-This script requires three required argumenents.
+This script requires three argumenents.
 1. The connected USB device in ~sdx~ format.
    Use the ~lsblk~ command to list available USB devices.
 2. The full path to the GnuPG keychain is stored ($GNUPGHOME).
@@ -89,7 +89,7 @@ This script must be executed as root ~sudo gpg-backup~.
 Only run this on a secure and trusted system.
 
 positional arguments:
-  usb         USB device in sdx format
+  usb         USB device in ~sdx~ format
   gnupghome   path to the GnuPG path
   pubkey      Public key exported using ~ gpg -a --export public.asc
 
@@ -99,7 +99,7 @@ options:
 Backup GnuPG keys to USB device example:
         sudo ./gpgbackup.py sda $GNUPGHOME public.asc
 
-script output:
+Output:
 #+begin_src
     =====================================================
     Backup GnuPG Key-chain to USB Drive:
@@ -146,16 +146,12 @@ script output:
 
 ** gpg-restore-from-sub
 
-usage:
-#+begin_src shell
-  gpg-restore-from-usb.py [-h] usb
-#+end_src
+This script assists in restoring GnuPG private and public keys from USB backup drive, created with [[#gpg-backup-to-usb][gpg-backup-to-usb]].
 
-Restore GnuPG private and public keys from USB backup drive.
+Once the gpg-restore-from-sub script has been executed the secret and public partitions on the backup USB have been mounted,
+and are accessible on ~/mnt/public~ for the public keys, and ~/mnt/secret~ for the private keys.
 
-Once the gpg-restore-from-sub script has been executed the secret and public partitions have been mounted, and accessible in ~/mnt/public~ for the public keys, and ~/mnt/secret~ for the private keys.
-
-Restore the keychain, configuration, and trusted keys:
+To restore the keychain, configuration, and trusted keys:
 #+begin_src
   rm ~/.gnupg/                          # Remove the old keychain.
   cp -r /mnt/secret/gpg_xxx ~/.gnupg    # Copy the stored keychain and configuration
@@ -163,7 +159,7 @@ Restore the keychain, configuration, and trusted keys:
   sudo reboot now                       # Reboot
 #+end_src
 
-Restore the keychain only - follow the following procedure:
+To rRestore the keychain only - follow the following procedure:
 #+begin_src
   rm ~/.gnupg/                          # Remove the old keychain.
   gpg -k                                # Innitiate the gpg keychain.
@@ -174,6 +170,11 @@ Restore the keychain only - follow the following procedure:
   > trust
   > 5
   sudo reboot now                       # Reboot
+#+end_src
+
+usage:
+#+begin_src shell
+  gpg-restore-from-usb.py [-h] usb
 #+end_src
 
 script output:
