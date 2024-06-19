@@ -1,27 +1,32 @@
 * === P U R E - S E C U R I T Y ===
-This repository contains usefull information regarding the use of security, mainly used on (Arch) Linux systems.
+This repository contains usefull information and scripts to enbale security (Arch) Linux systems.
 It further conatains a set of scripts that are usefull to:
 
-- ~gpg-provision~         Create a new set of GPG keys with [C] Certicate master and [S] Sign, [E] Encrypt and [A] Authenticate subkeys.
-- ~gpg-backup-to-sub~     Create a USB backup for the GnuPG key chain (LUKS) and public keys.
-- ~gpg-restore-from-usb~  Restore the USB backup created with ~gpg-backup-to-usb.
-- ~onlykey-wipe~          Clear all RSA and ECC registers from OnlyKey device.
-- ~onlykey-provision~     Transfer subkeys (created with gpg-provision) to OnlyKey device.
+|----------------------+----------------------------------------------------------------------------------------------------------------|
+| Script               | Description                                                                                                    |
+|----------------------+----------------------------------------------------------------------------------------------------------------|
+| [[*gpg-provision][gpg-provision]]        | Create a new set of GPG keys with [C] Certicate master and [S] Sign, [E] Encrypt and [A] Authenticate subkeys. |
+| gpg-backup-to-usb    | Create a USB backup for the GnuPG key chain (LUKS) and public keys.                                            |
+| gpg-restore-from-usb | Restore the USB backup created with ~gpg-backup-to-usb.                                                        |
+| onlykey-wipe         | Clear all RSA and ECC registers from OnlyKey device.                                                           |
+| onlykey-provision    | Transfer subkeys (created with gpg-provision) to OnlyKey device.                                               |
+|----------------------+----------------------------------------------------------------------------------------------------------------|
 
 ** gpg-provision
 
-usage:
+This scripts provisions a new GPG Key-chain according to best practices with the [C] Certify
+key on the Master key and [S][E][A] on sub-keys.
+The script configures the keychain in a ~/tmp~ directory, rather than in the default ~/.gnupg~.
+The created GnuPG key-chain can then be:
+1. Taken offline for secure storage (USB) - see [[*gpg-backup-to-usb][gpg-backup-to-usb]]
+2. Transfered to a smartcard such as OnlyKey (see [[*onlykey-provision][onlykey-provision]]) or YubiKey
+
+Usage:
 #+begin_src shell
   gpg-provision
 #+end_src
 
-This scripts provisions a new GPG according to the method described in 'drduh' guide.
-The script does not created a GPG configuration on this computer, instead it creates
-a configuration to be:
-1. Taken offline (full set of armoured files)
-2. Transfered to a smartcard such as OnlyKey or YubiKey
-
-script output:
+Output:
 #+begin_src
     ============================================================
     Create new GPG key pair.
@@ -194,3 +199,5 @@ script output:
     b. A standard partition that contains the exported public key file for distribution and publication.
        This partition also contains the scripts in case a reverse engineering is required!
 #+end_src
+
+** onlykey-provision
