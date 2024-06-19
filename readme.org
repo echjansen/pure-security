@@ -5,7 +5,7 @@ It further conatains a set of scripts that are usefull to:
 |----------------------+----------------------------------------------------------------------------------------------------------------|
 | Script               | Description                                                                                                    |
 |----------------------+----------------------------------------------------------------------------------------------------------------|
-| [[*gpg-provision][gpg-provision]]        | Create a new set of GPG keys with [C] Certicate master and [S] Sign, [E] Encrypt and [A] Authenticate subkeys. |
+| [[#gpg-provision][gpg-provision]]        | Create a new set of GPG keys with [C] Certicate master and [S] Sign, [E] Encrypt and [A] Authenticate subkeys. |
 | gpg-backup-to-usb    | Create a USB backup for the GnuPG key chain (LUKS) and public keys.                                            |
 | gpg-restore-from-usb | Restore the USB backup created with ~gpg-backup-to-usb.                                                        |
 | onlykey-wipe         | Clear all RSA and ECC registers from OnlyKey device.                                                           |
@@ -18,8 +18,8 @@ This scripts provisions a new GPG Key-chain according to best practices with the
 key on the Master key and [S][E][A] on sub-keys.
 The script configures the keychain in a ~/tmp~ directory, rather than in the default ~/.gnupg~.
 The created GnuPG key-chain can then be:
-1. Taken offline for secure storage (USB) - see [[*gpg-backup-to-usb][gpg-backup-to-usb]]
-2. Transfered to a smartcard such as OnlyKey (see [[*onlykey-provision][onlykey-provision]]) or YubiKey
+1. Taken offline for secure storage (USB) - see [[#gpg-backup-to-usb][gpg-backup-to-usb]]
+2. Transfered to a smartcard such as OnlyKey (see [[#onlykey-provision][onlykey-provision]]) or YubiKey
 
 Usage:
 #+begin_src shell
