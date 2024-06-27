@@ -17,7 +17,7 @@ def message_start():
     print(f"{GREEN}================================================================{END}")
     print(f"{GREEN} Restore GnuPG Key-chain from USB Drive: {END}")
     print(f"{GREEN}================================================================{END}")
-    print(f"{YELLO}Note: you likely want to execute this script on a Live Arch ISO!{END}")
+    print(f"{YELLOW}Note: you likely want to execute this script on a Live Arch ISO!{END}")
 
 def message_complete():
     print(f"{GREEN}\n====================================================={END}")
