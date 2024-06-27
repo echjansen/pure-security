@@ -14,9 +14,10 @@ END = "\033[0m"
 
 def message_start():
     os.system("reset")
-    print(f"{GREEN}====================================================={END}")
+    print(f"{GREEN}================================================================{END}")
     print(f"{GREEN} Restore GnuPG Key-chain from USB Drive: {END}")
-    print(f"{GREEN}====================================================={END}")
+    print(f"{GREEN}================================================================{END}")
+    print(f"{YELLO}Note: you likely want to execute this script on a Live Arch ISO!{END}")
 
 def message_complete():
     print(f"{GREEN}\n====================================================={END}")
@@ -24,9 +25,15 @@ def message_complete():
     print(f"{GREEN}====================================================={END}")
     print(f"{YELLOW}Remove the USB device, and store it in a save location.{END}")
     print(f"{YELLOW}Two partitions are mounted:{END}")
-    print(f"{YELLOW}a. An encrypted partition - created with LUKS - that contains the complete GNUPGHOME content and exported key files.{END}")
-    print(f"{YELLOW}b. A standard partition that contains the exported public key file for distribution and publication.{END}")
-    print(f"{YELLOW}   This partition also contains the scripts in case a reverse engineering is required!{END}")
+    print(f"{YELLOW}a. ~/mnt/secret/~ The secret LUKS partition that contains the complete GNUPGHOME content and exported key files.{END}")
+    print(f"{YELLOW}b. ~/mnt/public/~ The public partition that contains the exported public key file for distribution and publication.{END}")
+    print(f"{YELLOW}                  The public partition also contains the scripts in case a reverse engineering is required!{END}")
+    print(f"{YELLOW}c. It might be required to take ownership if the secret partition with: sudo chown -R user:user ~/mnt/secret/gpx_xxxxx~{END}")
+    print(f"{YELLOW}\nYou have now several options of using the restored gpg data:{END}")
+    print(f"{YELLOW}1. Import the secret keys on the harddrive (not recommended) with: ~gpg --import /mnt/secret/gpg_xxx/xxx.private.subkeys.asc~{END}")
+    print(f"{YELLOW}2. Move the imported secret keys to a YubiKey{END}")
+    print(f"{YELLOW}3. Provision a OnlyKey (recommended) with: ./onlykey-provision.py -d /mnt/secret/gpg_xxx/xxx.private.subkeys.asc~{END}")
+    print(f"{RED}Note: Do not import the xxx.private.secretkey.asc, is it can modify, revoke keys, etc.{END}")
 
 def is_sudo():
     """
@@ -62,7 +69,7 @@ def input_password():
     User to provide a password
     Return password if valid
     """
-    return getpass.getpass(f"{YELLOW}Please provide a password to protect the secret key partition: {END}")
+    return getpass.getpass(f"{YELLOW}Please provide the password to unlock the secret partition: {END}")
 
 def folder_create(folder):
     """
@@ -150,16 +157,14 @@ def partition_mount(partition, mountfolder):
 def main():
 
     parser = argparse.ArgumentParser(
-        description='Backup GnuPG private and public keys to USB backup drive.\n\n'
-                    'This script requires three required argumenents.\n'
+        description='Restore the GnuPG private and public keys from USB backup drive.\n\n'
+                    'This script requires one argumenent.\n'
                     '1. The connected USB device in ~sdx~ format.\n'
                     '   Use the ~lsblk~ command to list available USB devices.\n'
-                    '2. The full path to the GnuPG keychain is stored ($GNUPGHOME).\n'
-                    '3. The full path to the public key in armored format ~public-key.asc~.\n'
-                    'This script must be executed as root ~sudo gpg-backup~.\n'
-                    'Only run this on a secure and trusted system.',
-        epilog='''Backup GnuPG keys to USB device example:
-        sudo ./gpgbackup.py sda $GNUPGHOME public.asc
+                    'This script must be executed as root ~sudo ./gpg-restore-from-usb.py~.\n'
+                    'Only run this on a secure and trusted system, like a live Arch Linux ISO.',
+        epilog='''Restore GnuPG keys from USB device example:
+        sudo ./gpg-restore-from-usb.py sda
         ''',
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
