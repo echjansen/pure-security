@@ -185,6 +185,25 @@ def copy_file(source, destination):
     finally:
         return copy_file
 
+def partition_table_create(device):
+    """
+    Create a new partition table on ~devices~
+    Return True if successful
+    Return False if not successful
+    """
+    partition_table_create = False
+
+    try:
+        print(f"{GREEN}[ * ] Creating new partition table for: {END}" + device)
+        commands = f"g\nw"
+        subprocess.run(["fdisk", str(device)], input =f"{commands}", stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        partition_table_create = True
+    except subprocess.CalledProcessError as err:
+        print(f"{RED}Could not create partition table for: {END}" + device)
+        print(err)
+    finally:
+        return partition_table_create
+
 def partition_create(device, partition_no, size):
     """
     Create a new partition on devices
@@ -193,11 +212,6 @@ def partition_create(device, partition_no, size):
     """
 
     partition = None
-
-    if partition_no == 1:
-        print(f"{GREEN}[ * ] Creating new partition table for: {END}" + device)
-        commands = f"g\nw"
-        subprocess.run(["fdisk", str(device)], input =f"{commands}", stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
 
     try:
         print(f"{GREEN}[ * ] Creating partition: {END}" + device + str(partition_no))
@@ -315,7 +329,8 @@ def partition_format(format, partition, label):
 
     try:
         print(f"{GREEN}[ * ] Formatting partition: {END}" + partition)
-        subprocess.run([format, partition, "-L", label], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        commands = f"y"
+        subprocess.run([format, partition, "-L", label], input =f"{commands}",stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
         partition_format = True
     except subprocess.CalledProcessError as err:
         print(f"{RED}Could not format partition: {END}" + partition)
@@ -357,7 +372,7 @@ def main():
     LUKS_PARTITION = None
     LUKS_FORMATTED = False
     LUKS_MOUNTED = False
-    LUKS_FOLDER = None
+    PRIVATE_FOLDER = None
     PARTITION_SECRET = None
     PARTITION_PUBLIC = None
     USB_DRIVE = None
@@ -380,6 +395,9 @@ def main():
     LUKS_PASSWORD = input_password(8)
     if LUKS_PASSWORD is None: exit()
 
+    PARTITION_TABLE = partition_table_create(USB_DRIVE)
+    if PARTITION_TABLE is False: exit()
+
     print(f"\n{GREEN}Archiving GNUPGHOME in LUKS partition on USB.{END}")
     print(f"{GREEN}============================================={END}")
 
@@ -397,18 +415,28 @@ def main():
 
     if folder_remove("/mnt/secret") is False: exit()
 
-    LUKS_FOLDER = folder_create("/mnt/secret")
-    if LUKS_FOLDER is None: exit()
+    PRIVATE_FOLDER = folder_create("/mnt/secret")
+    if PRIVATE_FOLDER is None: exit()
 
-    LUKS_MOUNTED = partition_mount(LUKS_PARTITION, LUKS_FOLDER)
+    LUKS_MOUNTED = partition_mount(LUKS_PARTITION, PRIVATE_FOLDER)
     if LUKS_MOUNTED is False: exit()
 
-    GNUPG_COPIED = copy_folder(args.gnupghome, LUKS_FOLDER)
+    GNUPG_FOLDER = folder_create("/mnt/secret/.gnupg")
+    if GNUPG_FOLDER is None: exit()
+
+    GNUPG_COPIED = copy_folder(args.gnupghome, GNUPG_FOLDER)
     if GNUPG_COPIED is False: exit()
 
+    INFO_FOLDER = folder_create("/mnt/secret/info")
+    if INFO_FOLDER is None: exit()
+
+    # Copy information and scripts
+    INFO_COPIED = copy_folder(args.infopath, INFO_FOLDER)
+    if INFO_COPIED is False: exit()
+
     # Cleanup Secret partiton
-    if LUKS_MOUNTED is True: partition_umount(LUKS_FOLDER)
-    if LUKS_MOUNTED is True: folder_remove(LUKS_FOLDER)
+    if LUKS_MOUNTED is True: partition_umount(PRIVATE_FOLDER)
+    if LUKS_MOUNTED is True: folder_remove(PRIVATE_FOLDER)
     if LUKS_PARTITION is not None: luks_close(LUKS_PARTITION)
 
     print(f"\n{GREEN}Copying GNUPG public key to partition on USB.{END}")
@@ -432,9 +460,12 @@ def main():
     PUBLIC_COPIED = copy_file(args.pubkey, PUBLIC_FOLDER)
     if PUBLIC_COPIED is False: exit()
 
+    INFO_FOLDER = folder_create("/mnt/public/info")
+    if INFO_FOLDER is None: exit()
+
     # Copy information and scripts
-    INFO_COPIED = copy_folder(args.infopath, PUBLIC_FOLDER)
-    if PUBLIC_COPIED is False: exit()
+    INFO_COPIED = copy_folder(args.infopath, INFO_FOLDER)
+    if INFO_COPIED is False: exit()
 
     # Cleanup Public partiton
     if PUBLIC_MOUNTED is True: partition_umount(PUBLIC_FOLDER)
