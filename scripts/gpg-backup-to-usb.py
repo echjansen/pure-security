@@ -18,15 +18,14 @@ def message_start():
     print(f"{GREEN} Backup GnuPG Key-chain to USB Drive: {END}")
     print(f"{GREEN}====================================================={END}")
 
-def message_complete():
+def message_complete(partition_secret, partition_public):
     print(f"{GREEN}\n====================================================={END}")
     print(f"{GREEN} GPG Key Backup to USB Drive completed successfully. {END}")
     print(f"{GREEN}====================================================={END}")
     print(f"{YELLOW}Remove the USB device, and store it in a save location.{END}")
     print(f"{YELLOW}The USB contains two partitions:{END}")
-    print(f"{YELLOW}a. An encrypted partition - created with LUKS - that contains the complete GNUPGHOME content and exported key files.{END}")
-    print(f"{YELLOW}b. A standard partition that contains the exported public key file for distribution and publication.{END}")
-    print(f"{YELLOW}   This partition also contains the scripts in case a reverse engineering is required!{END}")
+    print(f"{YELLOW}1. " +  partition_secret + f" - The secret LUKS partition that contains the complete GNUPGHOME content and exported key files.{END}")
+    print(f"{YELLOW}2. " +  partition_public + f" - The public partition also contains the scripts in case a reverse engineering is required.{END}")
 
 def is_sudo():
     """
@@ -156,7 +155,7 @@ def copy_folder(source, destination):
 
     try:
         print(f"{GREEN}[ * ] Copying folder from: {END}" + source + f"{GREEN} to {END}" + destination)
-        subprocess.run(["cp", "-av", source, destination], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        subprocess.run(["cp", "-a", os.path.join(source, "."), destination], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
         copy_folder = True
     except subprocess.CalledProcessError as err:
         print(f"{RED}Could not copy folder from: {END}" + source + f"{RED} to {END}" + destination)
@@ -328,15 +327,16 @@ def main():
 
     parser = argparse.ArgumentParser(
         description='Backup GnuPG private and public keys to USB backup drive.\n\n'
-                    'This script requires three required argumenents.\n'
+                    'This script requires three argumenents:\n'
                     '1. The connected USB device in ~sdx~ format.\n'
                     '   Use the ~lsblk~ command to list available USB devices.\n'
                     '2. The full path to the GnuPG keychain is stored ($GNUPGHOME).\n'
                     '3. The full path to the public key in armored format ~public-key.asc~.\n'
+                    '4. The full path to this repository.\n'
                     'This script must be executed as root ~sudo gpg-backup~.\n'
-                    'Only run this on a secure and trusted system.',
+                    'Only run this on a secure and trusted system, such as an Arch Linux ISO.',
         epilog='''Backup GnuPG keys to USB device example:
-        sudo ./gpgbackup.py sda $GNUPGHOME public.asc
+        sudo ./gpg-backup-to-usb.py sda $GNUPGHOME public.asc ~/pure-security
         ''',
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
@@ -346,6 +346,8 @@ def main():
                         help="path to the GnuPG path")
     parser.add_argument('pubkey', type=str,
                         help="Public key exported using ~ gpg -a --export public.asc")
+    parser.add_argument('infopath', type=str,
+                        help="Path to folder containing help and scripts (f.i. this repository)")
     args = parser.parse_args()
 
     GNUPG_COPIED = False
@@ -426,15 +428,19 @@ def main():
     PUBLIC_MOUNTED = partition_mount(PARTITION_PUBLIC, PUBLIC_FOLDER)
     if PUBLIC_MOUNTED is False: exit()
 
-    # Do something
+    # Copy the publick key
     PUBLIC_COPIED = copy_file(args.pubkey, PUBLIC_FOLDER)
     if PUBLIC_COPIED is False: exit()
 
-    # Cleanup Secret partiton
+    # Copy information and scripts
+    INFO_COPIED = copy_folder(args.infopath, PUBLIC_FOLDER)
+    if PUBLIC_COPIED is False: exit()
+
+    # Cleanup Public partiton
     if PUBLIC_MOUNTED is True: partition_umount(PUBLIC_FOLDER)
     if PUBLIC_MOUNTED is True: folder_remove(PUBLIC_FOLDER)
 
-    message_complete()
+    message_complete(PARTITION_SECRET, PARTITION_PUBLIC)
 
 if __name__ == "__main__":
     main()
