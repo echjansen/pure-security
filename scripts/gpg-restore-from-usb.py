@@ -3,6 +3,7 @@
 import os
 import argparse
 import subprocess
+import tempfile
 import getpass
 
 BLACK = "\033[0;30m"
@@ -19,21 +20,18 @@ def message_start():
     print(f"{GREEN}================================================================{END}")
     print(f"{YELLOW}Note: you likely want to execute this script on a Live Arch ISO!{END}")
 
-def message_complete():
+def message_complete(path_private):
     print(f"{GREEN}\n====================================================={END}")
     print(f"{GREEN} Restore of GPG Key Backup from  USB completed. {END}")
     print(f"{GREEN}====================================================={END}")
     print(f"{YELLOW}Remove the USB device, and store it in a save location.{END}")
-    print(f"{YELLOW}Two partitions are mounted:{END}")
-    print(f"{YELLOW}a. ~/mnt/secret/~ The secret LUKS partition that contains the complete GNUPGHOME content and exported key files.{END}")
-    print(f"{YELLOW}b. ~/mnt/public/~ The public partition that contains the exported public key file for distribution and publication.{END}")
-    print(f"{YELLOW}                  The public partition also contains the scripts in case a reverse engineering is required!{END}")
-    print(f"{YELLOW}c. It might be required to take ownership if the secret partition with: sudo chown -R user:user ~/mnt/secret/gpx_xxxxx~{END}")
+    print(f"{YELLOW}a. The GnuPG key has been restored to: {END}" + path_private)
+    print(f"{YELLOW}b. It might be required to take ownership if the secret partition with: sudo chown -R user:user ~/tmp/gpx_xxxxx~{END}")
     print(f"{YELLOW}\nYou have now several options of using the restored gpg data:{END}")
-    print(f"{YELLOW}1. Import the secret keys on the harddrive (not recommended) with: ~gpg --import /mnt/secret/gpg_xxx/xxx.private.subkeys.asc~{END}")
-    print(f"{YELLOW}2. Move the imported secret keys to a YubiKey{END}")
-    print(f"{YELLOW}3. Provision a OnlyKey (recommended) with: ./onlykey-provision.py -d /mnt/secret/gpg_xxx/xxx.private.subkeys.asc~{END}")
-    print(f"{RED}Note: Do not import the xxx.private.secretkey.asc, is it can modify, revoke keys, etc.{END}")
+    print(f"{YELLOW}1. Import the secret keys on the harddrive (not recommended) with: ~gpg --import /tmp/gpg_xxx/xxx.private.subkeys.asc~{END}")
+    print(f"{YELLOW}2. Move the imported secret keys to a YubiKey, or{END}")
+    print(f"{YELLOW}3. Move the imported secret keys to an OnlyKey{END}")
+    print(f"{YELLOW}4. Reboot the machine to remove all data.{END}")
 
 def is_sudo():
     """
@@ -153,23 +151,88 @@ def partition_mount(partition, mountfolder):
     finally:
         return mounted
 
+def create_gnupghome():
+    """
+    Create a temporary directory which will be cleared on reboot,
+    and configure it as the hardened GnuPG directory.
+    """
+    with tempfile.TemporaryDirectory(prefix="gpg_", delete=False) as GNUPGHOME:
+        return GNUPGHOME
+
+def copy_folder(source, destination):
+    """
+    Copy folder from ~source~ to ~destination~
+    Return True if successful
+    Return False if not successful
+    """
+
+    copy_folder = False
+
+    try:
+        print(f"{GREEN}[ * ] Copying folder from: {END}" + source + f"{GREEN} to {END}" + destination)
+        subprocess.run(["cp", "-a", os.path.join(source, "."), destination], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        copy_folder = True
+    except subprocess.CalledProcessError as err:
+        print(f"{RED}Could not copy folder from: {END}" + source + f"{RED} to {END}" + destination)
+        print(err)
+    finally:
+        return copy_folder
+
+def partition_umount(mountfolder):
+    """
+    Un-mount ~partition~
+    Return True if successful
+    Return False if not successful
+    """
+
+    partition_umount = False
+    try:
+        print(f"{GREEN}[ * ] Unmounting partition: {END}" + mountfolder)
+        subprocess.run(["umount", mountfolder], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        partition_umount = True
+    except subprocess.CalledProcessError as err:
+        print(f"{RED}Could not un-mount folder: {END}" + mountfolder)
+        print(err)
+    finally:
+        return partition_umount
+
+def luks_close(partition):
+    """
+    Close a LUKS partition
+    Return True if successful
+    Return False if not successful
+    """
+
+    luks_close = False
+
+    try:
+        print(f"{GREEN}[ * ] Closing LUKS partition: {END}" + partition)
+        subprocess.run(["cryptsetup", "luksClose", str(partition)], stderr = subprocess.PIPE, stdout = subprocess.DEVNULL, text=True, check=True)
+        luks_close = True
+    except:
+        print(f"{RED}Could not close LUKS partition: {END}" + partition)
+    finally:
+        return luks_close
 
 def main():
 
     parser = argparse.ArgumentParser(
-        description='Restore the GnuPG private and public keys from USB backup drive.\n\n'
-                    'This script requires one argumenent.\n'
+        description='Restore the GnuPG private and/or public keys from USB backup drive.\n\n'
+                    'The following arguments are available:\n'
                     '1. The connected USB device in ~sdx~ format.\n'
                     '   Use the ~lsblk~ command to list available USB devices.\n'
+                    '2. Optionally include the private private key data.\n\n'
                     'This script must be executed as root ~sudo ./gpg-restore-from-usb.py~.\n'
                     'Only run this on a secure and trusted system, like a live Arch Linux ISO.',
-        epilog='''Restore GnuPG keys from USB device example:
-        sudo ./gpg-restore-from-usb.py sda
+        epilog='''Restore GnuPG keys from backup USB device example:
+        sudo ./gpg-restore-from-usb.py --private sda
         ''',
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument('usb', type=str,
-                        help="path to the USB device in sdx format")
+                        help="Path to the USB device in sdx format")
+    parser.add_argument('--private', action='store_true',
+                        help="Mount the private key partition")
     args = parser.parse_args()
 
     USB_DRIVE = None
@@ -185,33 +248,57 @@ def main():
     USB_DRIVE = is_usb_drive(args.usb)
     if USB_DRIVE is None: exit()
 
-    # Mount Secret partition
-    LUKS_PASSWORD = input_password()
-    PARTITION_SECRET = USB_DRIVE + str(1)
+    # Restore the private partition (public keys and private keys)
+    if args.private:
+        LUKS_PASSWORD = input_password()
+        PARTITION_SECRET = USB_DRIVE + str(1)
 
-    LUKS_PARTITION = luks_open(PARTITION_SECRET, "SECRET", LUKS_PASSWORD)
-    if LUKS_PARTITION is None: exit()
+        LUKS_PARTITION = luks_open(PARTITION_SECRET, "SECRET", LUKS_PASSWORD)
+        if LUKS_PARTITION is None: exit()
 
-    if folder_remove("/mnt/secret") is False: exit()
+        if folder_remove("/mnt/private") is False: exit()
 
-    LUKS_FOLDER = folder_create("/mnt/secret")
-    if LUKS_FOLDER is None: exit()
+        LUKS_FOLDER = folder_create("/mnt/private")
+        if LUKS_FOLDER is None: exit()
 
-    LUKS_MOUNTED = partition_mount(LUKS_PARTITION, LUKS_FOLDER)
-    if LUKS_MOUNTED is False: exit()
+        LUKS_MOUNTED = partition_mount(LUKS_PARTITION, LUKS_FOLDER)
+        if LUKS_MOUNTED is False: exit()
 
-    # Mount Public partition
-    PARTITION_PUBLIC = USB_DRIVE + str(2)
+        PATH_GPG = create_gnupghome()
+        if PATH_GPG is None: exit()
 
-    if folder_remove("/mnt/public") is False: exit()
+        COPY_PRIVATE = copy_folder("/mnt/private", PATH_GPG)
+        if COPY_PRIVATE is False: ext()
 
-    PUBLIC_FOLDER = folder_create("/mnt/public")
-    if PUBLIC_FOLDER is None: exit()
+        # Cleanup Secret partiton
+        if LUKS_MOUNTED is True: partition_umount(LUKS_FOLDER)
+        if LUKS_MOUNTED is True: folder_remove(LUKS_FOLDER)
+        if LUKS_PARTITION is not None: luks_close(LUKS_PARTITION)
 
-    PUBLIC_MOUNTED = partition_mount(PARTITION_PUBLIC, PUBLIC_FOLDER)
-    if PUBLIC_MOUNTED is False: exit()
+    # restore the public partition (public keys)
+    else:
+        # Mount Public partition only
+        PARTITION_PUBLIC = USB_DRIVE + str(2)
 
-    message_complete()
+        if folder_remove("/mnt/public") is False: exit()
+
+        PUBLIC_FOLDER = folder_create("/mnt/public")
+        if PUBLIC_FOLDER is None: exit()
+
+        PUBLIC_MOUNTED = partition_mount(PARTITION_PUBLIC, PUBLIC_FOLDER)
+        if PUBLIC_MOUNTED is False: exit()
+
+        PATH_GPG = create_gnupghome()
+        if PATH_GPG is None: exit()
+
+        COPY_PUBLIC = copy_folder("/mnt/public", PATH_GPG)
+        if COPY_PUBLIC is False: ext()
+
+        # Cleanup Public partiton
+        if PUBLIC_MOUNTED is True: partition_umount(PUBLIC_FOLDER)
+        if PUBLIC_MOUNTED is True: folder_remove(PUBLIC_FOLDER)
+
+    message_complete(PATH_GPG)
 
 if __name__ == "__main__":
     main()
