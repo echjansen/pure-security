@@ -1,6 +1,14 @@
 * === P U R E - S E C U R I T Y ===
-This repository contains usefull information and scripts to enbale security (Arch) Linux systems.
-It further conatains a set of scripts that are usefull to:
+This repository contains usefull information and scripts on how to enable security on (Arch) Linux systems.
+Assuming that you are setting up security for yourself the following steps would be common to execute:
+
+1. Create GPG keys
+2. Create a backup of GPG keys on an external USB storage device
+3. Restore GPG keys from an external storage device
+4. Move the private GPG keys to an external YubiKey device, or
+5. Move the private GPG keys to an external OnlyKey device
+
+Although the scripts are developed and tested on Arch Linux, they should work on other Linux distributions as well.
 
 |----------------------+----------------------------------------------------------------------------------------------------------------|
 | Script               | Description                                                                                                    |
@@ -12,7 +20,18 @@ It further conatains a set of scripts that are usefull to:
 | onlykey-wipe         | Clear all RSA and ECC registers on OnlyKey device.                                                             |
 |----------------------+----------------------------------------------------------------------------------------------------------------|
 
-** gpg-provision
+** Installation Process
+Assuming that you have no GPG keys this description walks you through the process of:
+1. Creating a GPG key pair
+2. Back-up the GPG key pair to a USB storage device
+3. Restoring the GPG key pair from a USB storgae device
+4. Installing GPG keys on OnlyKey device
+5. Installing GPG kyes on YubiKey device
+
+*** Creating a GPG Key Pair
+
+** Scripts
+*** gpg-provision
 
 Usage:
 #+begin_src shell
@@ -71,7 +90,7 @@ Output:
     ssb   ed25519/0xBA403E26A834F226 2024-06-14 [A] [expires: 2026-06-14]
 #+end_src
 
-** gpg-backup-to-usb
+*** gpg-backup-to-usb
 
 Usage:
 #+begin_src shell
@@ -102,35 +121,36 @@ Backup GnuPG keys to USB device example:
 Output:
 #+begin_src
     =====================================================
-    Backup GnuPG Key-chain to USB Drive:
+     Backup GnuPG Key-chain to USB Drive:
     =====================================================
 
-    All data on /dev/sda will be deleted. Continue (y/n)?y
+    All data on /dev/sdb will be deleted. Continue (y/n)?y
     Please provide a password to protect the secret key partition:
     Please repeat the password:
     The password provided is very short. Do you wish to continue (y/n)?y
 
     Archiving GNUPGHOME in LUKS partition on USB.
     =============================================
-    [ * ] Creating new partition table for: /dev/sda
-    [ * ] Creating partition: /dev/sda1
-    [ * ] Creating LUKS partition: /dev/sda1
+    [ * ] Creating new partition table for: /dev/sdb
+    [ * ] Creating partition: /dev/sdb1
+    [ * ] Creating LUKS partition: /dev/sdb1
     [ * ] Opening LUKS partition: SECRET
     [ * ] Formatting partition: /dev/mapper/SECRET
+    [ * ] Removing folder: /mnt/secret
     [ * ] Creating folder /mnt/secret
     [ * ] Mounting partition: /dev/mapper/SECRET to /mnt/secret
-    [ * ] Copying folder from: /tmp/gpg_ffl8x1vb/ to /mnt/secret
+    [ * ] Copying folder from: /tmp/gpg_mxxn633x/ to /mnt/secret
     [ * ] Unmounting partition: /mnt/secret
     [ * ] Removing folder: /mnt/secret
     [ * ] Closing LUKS partition: /dev/mapper/SECRET
 
     Copying GNUPG public key to partition on USB.
     =============================================
-    [ * ] Creating partition: /dev/sda2
-    [ * ] Formatting partition: /dev/sda2
+    [ * ] Creating partition: /dev/sdb2
+    [ * ] Formatting partition: /dev/sdb2
     [ * ] Creating folder /mnt/public
-    [ * ] Mounting partition: /dev/sda2 to /mnt/public
-    [ * ] Copying file from: /tmp/gpg_ffl8x1vb/77C76AEF8DC59FF7.public.key.asc to /mnt/public
+    [ * ] Mounting partition: /dev/sdb2 to /mnt/public
+    [ * ] Copying file from: /tmp/gpg_mxxn633x/1C68B003C941458B.public.key.asc to /mnt/public
     [ * ] Unmounting partition: /mnt/public
     [ * ] Removing folder: /mnt/public
 
@@ -139,12 +159,11 @@ Output:
     =====================================================
     Remove the USB device, and store it in a save location.
     The USB contains two partitions:
-    a. An encrypted partition - created with LUKS - that contains the complete GNUPGHOME content and exported key files.
-    b. A standard partition that contains the exported public key file for distribution and publication.
-       This partition also contains the scripts in case a reverse engineering is required!
+    1. /dev/sdb1 - The secret LUKS partition that contains the complete GNUPGHOME content and exported key files.
+    2. /dev/sdb2 - The public partition also contains the scripts in case a reverse engineering is required.
 #+end_src
 
-** gpg-restore-from-sub
+*** gpg-restore-from-usb
 
 This script assists in restoring GnuPG private and public keys from USB backup drive, created with [[#gpg-backup-to-usb][gpg-backup-to-usb]].
 
@@ -159,7 +178,7 @@ To restore the keychain, configuration, and trusted keys:
   sudo reboot now                       # Reboot
 #+end_src
 
-To rRestore the keychain only - follow the following procedure:
+To restore the keychain only - follow the following procedure:
 #+begin_src
   rm ~/.gnupg/                          # Remove the old keychain.
   gpg -k                                # Innitiate the gpg keychain.
@@ -175,6 +194,28 @@ To rRestore the keychain only - follow the following procedure:
 usage:
 #+begin_src shell
   gpg-restore-from-usb.py [-h] usb
+#+end_src
+
+help:
+#+begin_src shell
+    usage: gpg-restore-from-usb.py [-h] usb
+
+    Restore the GnuPG private and public keys from USB backup drive.
+
+    This script requires one argumenent.
+    1. The connected USB device in ~sdx~ format.
+       Use the ~lsblk~ command to list available USB devices.
+    This script must be executed as root ~sudo ./gpg-restore-from-usb.py~.
+    Only run this on a secure and trusted system, like a live Arch Linux ISO.
+
+    positional arguments:
+      usb         path to the USB device in sdx format
+
+    options:
+      -h, --help  show this help message and exit
+
+    Restore GnuPG keys from USB device example:
+            sudo ./gpg-restore-from-usb.py sda
 #+end_src
 
 script output:
@@ -201,4 +242,4 @@ script output:
        This partition also contains the scripts in case a reverse engineering is required!
 #+end_src
 
-** onlykey-provision
+*** onlykey-provision
