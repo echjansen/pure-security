@@ -29,6 +29,37 @@ Assuming that you have no GPG keys this description walks you through the proces
 5. Installing GPG kyes on YubiKey device
 The scripts in this repository will assist you with the required tasks.
 
+** Prerequisites
+When creating and transfering GnuPG keys, you are handling ~secret~ information. It is therefor best to execute the commands and scripts on a trusted system.
+A trusted system would not be connected to the internet when handling GnuPG keys. It is assumed you installed Arch Linux in a virtual environment (see [[https://github.com/echjansen/pure-arch][pure-arch]] for a secure Arch Linux  installation script).
+
+Once booted in an Arch Linux environment install the Linux packages for GnuPG key creation and USB backup:
+
+#+begin_src shell
+  pacman -Sy                      # update the pacman catalog
+  pacman -S git gnupg             # install git and gnupg packages
+  git clone https://github.com/echjansen/pure-security
+#+end_src
+
+The following is required for OnlyKey hardware tokens:
+
+#+begin_src shell
+  pacman -S python-setuptools libusb python-pip libfido2
+  pacman -S python-pgpy python-ptyprocess
+  pip install onlykey             # onlykey client tool
+  pip intsall onlykey-agent       # onlykey agent
+#+end_src
+
+Linux system requires a special rule for non-root users to use USB devices.
+
+#+begin_src shell
+  curl -o 49-onlykey.rules https://raw.githubusercontent.com/echjansen/main/config/49-onlykey.rules
+  sudo cp 49-onlykey.rules /etc/udev/rules.d/
+  sudo udevadm control --reload-rules
+  sudo udevadm trigger
+  # unplug and plug in OnlyKey device
+#+end_src
+
 ** Scripts
 *** gpg-provision
 
