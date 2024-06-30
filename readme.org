@@ -1,6 +1,6 @@
 * === P U R E - S E C U R I T Y ===
-This repository contains usefull information and scripts on how to enable security on (Arch) Linux systems.
-Assuming that you are setting up security for yourself the following steps would be common to execute:
+This repository contains usefull information and scripts to enable security on (Arch) Linux systems.
+Assuming that you are setting up security ~from scratch~ the following steps would be common to execute:
 
 1. Create GPG keys
 2. Create a backup of GPG keys on an external USB storage device
@@ -8,7 +8,7 @@ Assuming that you are setting up security for yourself the following steps would
 4. Move the private GPG keys to an external YubiKey device, or
 5. Move the private GPG keys to an external OnlyKey device
 
-Although the scripts are developed and tested on Arch Linux, they should work on other Linux distributions as well.
+Although the scripts are developed and tested on Arch Linux, they should work on other Linux distributions.
 
 |----------------------+----------------------------------------------------------------------------------------------------------------|
 | Script               | Description                                                                                                    |
@@ -16,8 +16,8 @@ Although the scripts are developed and tested on Arch Linux, they should work on
 | [[#gpg-provision][gpg-provision]]        | Create a new set of GPG keys with [C] Certicate master and [S] Sign, [E] Encrypt and [A] Authenticate subkeys. |
 | [[#gpg-backup-to-usb][gpg-backup-to-usb]]    | Create a USB backup for the GnuPG key chain (LUKS) and public keys.                                            |
 | [[#gpg-restore-from-sub][gpg-restore-from-sub]] | Restore the USB backup created with ~gpg-backup-to-usb.                                                        |
+| [[#onlykey-wipe][onlykey-wipe]]         | Clear all RSA and ECC registers on OnlyKey device.                                                             |
 | [[#onlykey-provision][onlykey-provision]]    | Transfer subkeys (created with gpg-provision) to OnlyKey device.                                               |
-| onlykey-wipe         | Clear all RSA and ECC registers on OnlyKey device.                                                             |
 |----------------------+----------------------------------------------------------------------------------------------------------------|
 
 ** Installation Process
@@ -28,6 +28,7 @@ Assuming that you have no GPG keys this description walks you through the proces
 4. Installing GPG keys on OnlyKey device, and / or
 5. Installing GPG kyes on YubiKey device
 The scripts in this repository will assist you with the required tasks.
+
 ** Scripts
 *** gpg-provision
 
