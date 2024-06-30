@@ -25,11 +25,9 @@ Assuming that you have no GPG keys this description walks you through the proces
 1. Creating a GPG key pair
 2. Back-up the GPG key pair to a USB storage device
 3. Restoring the GPG key pair from a USB storgae device
-4. Installing GPG keys on OnlyKey device
+4. Installing GPG keys on OnlyKey device, and / or
 5. Installing GPG kyes on YubiKey device
-
-*** Creating a GPG Key Pair
-
+The scripts in this repository will assist you with the required tasks.
 ** Scripts
 *** gpg-provision
 
@@ -220,26 +218,185 @@ help:
 
 script output:
 #+begin_src
-    =====================================================
+    ================================================================
      Restore GnuPG Key-chain from USB Drive:
-    =====================================================
-    Please provide a password to protect the secret key partition:
+    ================================================================
+    Note: you likely want to execute this script on a Live Arch ISO!
+    Please provide the password to unlock the secret partition:
     [ * ] Opening LUKS partition: SECRET
-    [ * ] Removing folder: /mnt/secret
-    [ * ] Creating folder /mnt/secret
-    [ * ] Mounting partition: /dev/mapper/SECRET to /mnt/secret
-    [ * ] Removing folder: /mnt/public
-    [ * ] Creating folder /mnt/public
-    [ * ] Mounting partition: /dev/sdb2 to /mnt/public
+    [ * ] Creating folder /mnt/private
+    [ * ] Mounting partition: /dev/mapper/SECRET to /mnt/private
+    [ * ] Copying folder from: /mnt/private to /tmp/gpg_418qjzms
+    [ * ] Unmounting partition: /mnt/private
+    [ * ] Removing folder: /mnt/private
+    [ * ] Closing LUKS partition: /dev/mapper/SECRET
 
     =====================================================
      Restore of GPG Key Backup from  USB completed.
     =====================================================
     Remove the USB device, and store it in a save location.
-    Two partitions are mounted:
-    a. An encrypted partition - created with LUKS - that contains the complete GNUPGHOME content and exported key files.
-    b. A standard partition that contains the exported public key file for distribution and publication.
-       This partition also contains the scripts in case a reverse engineering is required!
+    a. The GnuPG key has been restored to: /tmp/gpg_418qjzms
+    b. It might be required to take ownership if the secret partition with: sudo chown -R user:user ~/tmp/gpx_xxxxx~
+
+    You have now several options of using the restored gpg data:
+    1. Import the secret keys on the harddrive (not recommended) with: ~gpg --import /tmp/gpg_xxx/xxx.private.subkeys.asc~
+    2. Move the imported secret keys to a YubiKey, or
+    3. Move the imported secret keys to an OnlyKey
+    4. Reboot the machine to remove all data.
 #+end_src
 
+*** onlykey-wipe (optional)
+This script wipes all existing GPG - ECC (16) / RSA (4) keys from OnlyKey.
+
+usage:
+#+begin_src shell
+  ./onlykey-wipe.sh
+#+end_src
+
+script output:
+#+begin_src shell
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped ECC Key
+  Successfully set Label
+  Successfully wiped RSA Private Key
+  Successfully set Label
+  Successfully wiped RSA Private Key
+  Successfully set Label
+  Successfully wiped RSA Private Key
+  Successfully set Label
+  Successfully wiped RSA Private Key
+  Successfully set Label
+#+end_src
 *** onlykey-provision
+This script transfers private subkeys to OnlyKey.
+If OnlyKey has already keys loaded, the script will strore the new sub-keys in the next available slots (there are 16 slots in total available for GPG keys). Alternatively, any pre-programmed keys can be wirped with the ~onlykey-wipe~ script.
+
+usage:
+#+begin_src shell
+  ./onlykey-provision.py -d private-subkey.asc # Dryrun
+  ./onlykey-provision.py private-subkey.asc    # Transfer private keys
+#+end_src
+
+help:
+#+begin_src shell
+    usage: onlykey-provision.py [-h] [-d] [--no-expired] [--no-colors] [-p PASSPHRASE] keyfile
+
+    Extract secret subkeys from a OpenPGP key.
+
+    This script will display and set the raw private keys and subkeys on your OnlyKey.
+    Only run this on a secure trusted system.
+
+    positional arguments:
+      keyfile               path to the secret PEM-encoded key file, or '-' for stdin.
+
+    options:
+      -h, --help            show this help message and exit
+      -d, --display         display only, extracted keys shown for loading in the OnlyKey Desktop App
+      --no-expired          do not show expired subkeys
+      --no-colors           do not output with colors. Usefull for piping output and use in scripts.
+      -p PASSPHRASE, --passphrase PASSPHRASE
+                            the passphrase of the key. Don't forget bash's history keeps everything !
+
+    Extract and load keys onto OnlyKey example:
+            gpg --export-secret-keys -a keyid | ./onlykey-cli-gpg-add-keys -
+            ./onlykey-cli-gpg-add-keys ~/mykey.asc --no-expired
+            Extract and display for loading in the OnlyKey Desktop App example:
+            ./onlykey-cli-gpg-add-keys ~/mykey.asc -d
+#+end_src
+
+script output:
+#+begin_src shell
+  =====================================================
+      | OnlyKey Provisioning script                       |
+      =====================================================
+      Enter GPG key password to open key:
+      No secret primary key
+
+      Extracting subkeys...
+      subkey id: XXXXXXXXXXXXXXXX
+      subkey type: EdDSA
+      subkey usage: S
+      subkey size: 256 bits
+
+      subkey id: XXXXXXXXXXXXXXXX
+      subkey type: ECDSA
+      subkey usage: E
+      subkey size: 256 bits
+
+      subkey id: XXXXXXXXXXXXXXXX
+      subkey type: EdDSA
+      subkey usage: A
+      subkey size: 256 bits
+
+
+      Keys without a private key:
+      keyid: b'XXXXXXXXXXXXXXXX', type: b'cESCA', algorithm: 22, keylength b'255'
+
+      Keys not supported:
+      keyid: b'XXXXXXXXXXXXXXXX', type: b'a', algorithm: 22, keylength b'255'
+
+      Keys to create:
+
+      Transfering keys ...
+      b's'
+      only_key.setkey(101, 'x', 's', 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+      Successfully set ECC Key
+      only_key.setslot(29, MessageField.LABEL, XXXXXXXXXXXXXXXX)
+      Successfully set Label
+      b'e'
+      only_key.setkey(102, 'x', 'd', 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+      Successfully set ECC Key
+      only_key.setslot(30, MessageField.LABEL, XXXXXXXXXXXXXXXX)
+      Successfully set Label
+
+      Keyslots:
+      <Slot 'RSA Key 1|b'''>
+      <Slot 'RSA Key 2|b'''>
+      <Slot 'RSA Key 3|b'''>
+      <Slot 'RSA Key 4|b'''>
+      <Slot 'ECC Key 1|b'XXXXXXXXXXXXXXXX''>
+      <Slot 'ECC Key 2|b'XXXXXXXXXXXXXXXX''>
+      <Slot 'ECC Key 3|b'''>
+      <Slot 'ECC Key 4|b'''>
+      <Slot 'ECC Key 5|b'''>
+      <Slot 'ECC Key 6|b'''>
+      <Slot 'ECC Key 7|b'''>
+      <Slot 'ECC Key 8|b'''>
+      <Slot 'ECC Key 9|b'''>
+      <Slot 'ECC Key 10|b'''>
+      <Slot 'ECC Key 11|b'''>
+      <Slot 'ECC Key 12|b'''>
+      <Slot 'ECC Key 13|b'''>
+      <Slot 'ECC Key 14|b'''>
+      <Slot 'ECC Key 15|b'''>
+      <Slot 'ECC Key 16|b'''>
+#+end_src
