@@ -335,7 +335,7 @@ help:
 
 script output:
 #+begin_src shell
-  =====================================================
+      =====================================================
       | OnlyKey Provisioning script                       |
       =====================================================
       Enter GPG key password to open key:
