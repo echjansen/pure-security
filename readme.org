@@ -65,7 +65,7 @@ Linux system requires a special rule for non-root users to use USB devices.
 
 Usage:
 #+begin_src shell
-  gpg-provision
+  ./gpg-provision.py
 #+end_src
 
 This scripts provisions a new GPG Key-chain according to best practices with the [C] Certify
@@ -76,55 +76,55 @@ The created GnuPG key-chain can then be:
 2. Transfered to a smartcard such as OnlyKey (see [[#onlykey-provision][onlykey-provision]]) or YubiKey
 
 Output:
-#+begin_src
-    ============================================================
-    Create new GPG key pair.
-    Inlcudes a Master [C] and subkeys [S][E][A]
-    ============================================================
-    Real Name: user
-    Email: user@domain.com
-    Please provide a password to protect the secret key chain:
-    Please repeat the password:
-    The password provided is very short. Do you wish to continue (y/n)?y
-    1. Curve 25519 (default), 2. RSA: 1
-    Expiration in years (2y): 2y
+#+begin_src shell
+  # ============================================================
+  # Create new GPG key pair.
+  # Inlcudes a Master [C] and subkeys [S][E][A]
+  # ============================================================
+  # Real Name: user
+  # Email: user@domain.com
+  # Please provide a password to protect the secret key chain:
+  # Please repeat the password:
+  # The password provided is very short. Do you wish to continue (y/n)?y
+  # 1. Curve 25519 (default), 2. RSA: 1
+  # Expiration in years (2y): 2y
 
-    ============================================================
-     Selected values for GPG Key creation:
-    ============================================================
-     GNUPGHOME:  /tmp/gpg_ajttd1g3
-     IDENTITY:   "user <user@domain.com>"
-     KEY TYPE:   25519
-     EXPIRATION: 2y
-    Continue (y/n)?y
+  # ============================================================
+  #  Selected values for GPG Key creation:
+  # ============================================================
+  #  GNUPGHOME:  /tmp/gpg_ajttd1g3
+  #  IDENTITY:   "user <user@domain.com>"
+  #  KEY TYPE:   25519
+  #  EXPIRATION: 2y
+  # Continue (y/n)?y
 
-    gpg: keybox '/tmp/gpg_ajttd1g3/pubring.kbx' created
-    gpg: /tmp/gpg_ajttd1g3/trustdb.gpg: trustdb created
-    gpg: directory '/tmp/gpg_ajttd1g3/openpgp-revocs.d' created
-    gpg: revocation certificate stored as '/tmp/gpg_ajttd1g3/openpgp-revocs.d/95D2F7D300BF2DDA30CD217C586757876553EB4C.rev'
-    gpg: checking the trustdb
-    gpg: marginals needed: 3  completes needed: 1  trust model: pgp
-    gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+  # gpg: keybox '/tmp/gpg_ajttd1g3/pubring.kbx' created
+  # gpg: /tmp/gpg_ajttd1g3/trustdb.gpg: trustdb created
+  # gpg: directory '/tmp/gpg_ajttd1g3/openpgp-revocs.d' created
+  # gpg: revocation certificate stored as '/tmp/gpg_ajttd1g3/openpgp-revocs.d/95D2F7D300BF2DDA30CD217C586757876553EB4C.rev'
+  # gpg: checking the trustdb
+  # gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+  # gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
 
-    ============================================================
-     Keys created and keys exported for backup
-     Check GPG_GNUPGHOME for backup files.
-    ============================================================
-    /tmp/gpg_ajttd1g3/pubring.kbx
-    -----------------------------
-    sec   ed25519/0x586757876553EB4C 2024-06-14 [C]
-          Key fingerprint = 95D2 F7D3 00BF 2DDA 30CD  217C 5867 5787 6553 EB4C
-    uid                   [ultimate] user <user@domain.com>
-    ssb   ed25519/0x525446A57AA572A2 2024-06-14 [S] [expires: 2026-06-14]
-    ssb   cv25519/0x92B2CDB6AB2377E1 2024-06-14 [E] [expires: 2026-06-14]
-    ssb   ed25519/0xBA403E26A834F226 2024-06-14 [A] [expires: 2026-06-14]
+  # ============================================================
+  #  Keys created and keys exported for backup
+  #  Check GPG_GNUPGHOME for backup files.
+  # ============================================================
+  # /tmp/gpg_ajttd1g3/pubring.kbx
+  # -----------------------------
+  # sec   ed25519/0x586757876553EB4C 2024-06-14 [C]
+  #       Key fingerprint = 95D2 F7D3 00BF 2DDA 30CD  217C 5867 5787 6553 EB4C
+  # uid                   [ultimate] user <user@domain.com>
+  # ssb   ed25519/0x525446A57AA572A2 2024-06-14 [S] [expires: 2026-06-14]
+  # ssb   cv25519/0x92B2CDB6AB2377E1 2024-06-14 [E] [expires: 2026-06-14]
+  # ssb   ed25519/0xBA403E26A834F226 2024-06-14 [A] [expires: 2026-06-14]
 #+end_src
 
 *** gpg-backup-to-usb
 
 Usage:
 #+begin_src shell
-  gpg-backup-to-usb.py [-h] usb gnupghome pubkey
+  ./gpg-backup-to-usb.py [-h] usb gnupghome pubkey
 #+end_src
 
 Backup GnuPG private and public keys to USB backup drive.
@@ -149,48 +149,48 @@ Backup GnuPG keys to USB device example:
         sudo ./gpgbackup.py sda $GNUPGHOME public.asc
 
 Output:
-#+begin_src
-    =====================================================
-     Backup GnuPG Key-chain to USB Drive:
-    =====================================================
+#+begin_src shell
+  # =====================================================
+  #  Backup GnuPG Key-chain to USB Drive:
+  # =====================================================
 
-    All data on /dev/sdb will be deleted. Continue (y/n)?y
-    Please provide a password to protect the secret key partition:
-    Please repeat the password:
-    The password provided is very short. Do you wish to continue (y/n)?y
+  # All data on /dev/sdb will be deleted. Continue (y/n)?y
+  # Please provide a password to protect the secret key partition:
+  # Please repeat the password:
+  # The password provided is very short. Do you wish to continue (y/n)?y
 
-    Archiving GNUPGHOME in LUKS partition on USB.
-    =============================================
-    [ * ] Creating new partition table for: /dev/sdb
-    [ * ] Creating partition: /dev/sdb1
-    [ * ] Creating LUKS partition: /dev/sdb1
-    [ * ] Opening LUKS partition: SECRET
-    [ * ] Formatting partition: /dev/mapper/SECRET
-    [ * ] Removing folder: /mnt/secret
-    [ * ] Creating folder /mnt/secret
-    [ * ] Mounting partition: /dev/mapper/SECRET to /mnt/secret
-    [ * ] Copying folder from: /tmp/gpg_mxxn633x/ to /mnt/secret
-    [ * ] Unmounting partition: /mnt/secret
-    [ * ] Removing folder: /mnt/secret
-    [ * ] Closing LUKS partition: /dev/mapper/SECRET
+  # Archiving GNUPGHOME in LUKS partition on USB.
+  # =============================================
+  # [ * ] Creating new partition table for: /dev/sdb
+  # [ * ] Creating partition: /dev/sdb1
+  # [ * ] Creating LUKS partition: /dev/sdb1
+  # [ * ] Opening LUKS partition: SECRET
+  # [ * ] Formatting partition: /dev/mapper/SECRET
+  # [ * ] Removing folder: /mnt/secret
+  # [ * ] Creating folder /mnt/secret
+  # [ * ] Mounting partition: /dev/mapper/SECRET to /mnt/secret
+  # [ * ] Copying folder from: /tmp/gpg_mxxn633x/ to /mnt/secret
+  # [ * ] Unmounting partition: /mnt/secret
+  # [ * ] Removing folder: /mnt/secret
+  # [ * ] Closing LUKS partition: /dev/mapper/SECRET
 
-    Copying GNUPG public key to partition on USB.
-    =============================================
-    [ * ] Creating partition: /dev/sdb2
-    [ * ] Formatting partition: /dev/sdb2
-    [ * ] Creating folder /mnt/public
-    [ * ] Mounting partition: /dev/sdb2 to /mnt/public
-    [ * ] Copying file from: /tmp/gpg_mxxn633x/1C68B003C941458B.public.key.asc to /mnt/public
-    [ * ] Unmounting partition: /mnt/public
-    [ * ] Removing folder: /mnt/public
+  # Copying GNUPG public key to partition on USB.
+  # =============================================
+  # [ * ] Creating partition: /dev/sdb2
+  # [ * ] Formatting partition: /dev/sdb2
+  # [ * ] Creating folder /mnt/public
+  # [ * ] Mounting partition: /dev/sdb2 to /mnt/public
+  # [ * ] Copying file from: /tmp/gpg_mxxn633x/1C68B003C941458B.public.key.asc to /mnt/public
+  # [ * ] Unmounting partition: /mnt/public
+  # [ * ] Removing folder: /mnt/public
 
-    =====================================================
-     GPG Key Backup to USB Drive completed successfully.
-    =====================================================
-    Remove the USB device, and store it in a save location.
-    The USB contains two partitions:
-    1. /dev/sdb1 - The secret LUKS partition that contains the complete GNUPGHOME content and exported key files.
-    2. /dev/sdb2 - The public partition also contains the scripts in case a reverse engineering is required.
+  # =====================================================
+  #  GPG Key Backup to USB Drive completed successfully.
+  # =====================================================
+  # Remove the USB device, and store it in a save location.
+  # The USB contains two partitions:
+  # 1. /dev/sdb1 - The secret LUKS partition that contains the complete GNUPGHOME content and exported key files.
+  # 2. /dev/sdb2 - The public partition also contains the scripts in case a reverse engineering is required.
 #+end_src
 
 *** gpg-restore-from-usb
@@ -226,55 +226,52 @@ usage:
   gpg-restore-from-usb.py [-h] usb
 #+end_src
 
-help:
-#+begin_src shell
-    usage: gpg-restore-from-usb.py [-h] usb
+usage: gpg-restore-from-usb.py [-h] usb
 
-    Restore the GnuPG private and public keys from USB backup drive.
+Restore the GnuPG private and public keys from USB backup drive.
 
-    This script requires one argumenent.
-    1. The connected USB device in ~sdx~ format.
-       Use the ~lsblk~ command to list available USB devices.
-    This script must be executed as root ~sudo ./gpg-restore-from-usb.py~.
-    Only run this on a secure and trusted system, like a live Arch Linux ISO.
+This script requires one argumenent.
+1. The connected USB device in ~sdx~ format.
+   Use the ~lsblk~ command to list available USB devices.
+This script must be executed as root ~sudo ./gpg-restore-from-usb.py~.
+Only run this on a secure and trusted system, like a live Arch Linux ISO.
 
-    positional arguments:
-      usb         path to the USB device in sdx format
+positional arguments:
+  usb         path to the USB device in sdx format
 
-    options:
-      -h, --help  show this help message and exit
+options:
+  -h, --help  show this help message and exit
 
-    Restore GnuPG keys from USB device example:
-            sudo ./gpg-restore-from-usb.py sda
-#+end_src
+Restore GnuPG keys from USB device example:
+        sudo ./gpg-restore-from-usb.py sda
 
 script output:
-#+begin_src
-    ================================================================
-     Restore GnuPG Key-chain from USB Drive:
-    ================================================================
-    Note: you likely want to execute this script on a Live Arch ISO!
-    Please provide the password to unlock the secret partition:
-    [ * ] Opening LUKS partition: SECRET
-    [ * ] Creating folder /mnt/private
-    [ * ] Mounting partition: /dev/mapper/SECRET to /mnt/private
-    [ * ] Copying folder from: /mnt/private to /tmp/gpg_418qjzms
-    [ * ] Unmounting partition: /mnt/private
-    [ * ] Removing folder: /mnt/private
-    [ * ] Closing LUKS partition: /dev/mapper/SECRET
+#+begin_src shell
+  # ================================================================
+  #  Restore GnuPG Key-chain from USB Drive:
+  # ================================================================
+  # Note: you likely want to execute this script on a Live Arch ISO!
+  # Please provide the password to unlock the secret partition:
+  # [ * ] Opening LUKS partition: SECRET
+  # [ * ] Creating folder /mnt/private
+  # [ * ] Mounting partition: /dev/mapper/SECRET to /mnt/private
+  # [ * ] Copying folder from: /mnt/private to /tmp/gpg_418qjzms
+  # [ * ] Unmounting partition: /mnt/private
+  # [ * ] Removing folder: /mnt/private
+  # [ * ] Closing LUKS partition: /dev/mapper/SECRET
 
-    =====================================================
-     Restore of GPG Key Backup from  USB completed.
-    =====================================================
-    Remove the USB device, and store it in a save location.
-    a. The GnuPG key has been restored to: /tmp/gpg_418qjzms
-    b. It might be required to take ownership if the secret partition with: sudo chown -R user:user ~/tmp/gpx_xxxxx~
+  # =====================================================
+  #  Restore of GPG Key Backup from  USB completed.
+  # =====================================================
+  # Remove the USB device, and store it in a save location.
+  # a. The GnuPG key has been restored to: /tmp/gpg_418qjzms
+  # b. It might be required to take ownership if the secret partition with: sudo chown -R user:user ~/tmp/gpx_xxxxx~
 
-    You have now several options of using the restored gpg data:
-    1. Import the secret keys on the harddrive (not recommended) with: ~gpg --import /tmp/gpg_xxx/xxx.private.subkeys.asc~
-    2. Move the imported secret keys to a YubiKey, or
-    3. Move the imported secret keys to an OnlyKey
-    4. Reboot the machine to remove all data.
+  # You have now several options of using the restored gpg data:
+  # 1. Import the secret keys on the harddrive (not recommended) with: ~gpg --import /tmp/gpg_xxx/xxx.private.subkeys.asc~
+  # 2. Move the imported secret keys to a YubiKey, or
+  # 3. Move the imported secret keys to an OnlyKey
+  # 4. Reboot the machine to remove all data.
 #+end_src
 
 *** onlykey-wipe (optional)
@@ -287,46 +284,46 @@ usage:
 
 script output:
 #+begin_src shell
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped ECC Key
-  Successfully set Label
-  Successfully wiped RSA Private Key
-  Successfully set Label
-  Successfully wiped RSA Private Key
-  Successfully set Label
-  Successfully wiped RSA Private Key
-  Successfully set Label
-  Successfully wiped RSA Private Key
-  Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped ECC Key
+  # Successfully set Label
+  # Successfully wiped RSA Private Key
+  # Successfully set Label
+  # Successfully wiped RSA Private Key
+  # Successfully set Label
+  # Successfully wiped RSA Private Key
+  # Successfully set Label
+  # Successfully wiped RSA Private Key
+  # Successfully set Label
 #+end_src
 *** onlykey-provision
 This script transfers private subkeys to OnlyKey.
@@ -338,97 +335,94 @@ usage:
   ./onlykey-provision.py private-subkey.asc    # Transfer private keys
 #+end_src
 
-help:
-#+begin_src shell
-    usage: onlykey-provision.py [-h] [-d] [--no-expired] [--no-colors] [-p PASSPHRASE] keyfile
+usage: onlykey-provision.py [-h] [-d] [--no-expired] [--no-colors] [-p PASSPHRASE] keyfile
 
-    Extract secret subkeys from a OpenPGP key.
+Extract secret subkeys from a OpenPGP key.
 
-    This script will display and set the raw private keys and subkeys on your OnlyKey.
-    Only run this on a secure trusted system.
+This script will display and set the raw private keys and subkeys on your OnlyKey.
+Only run this on a secure trusted system.
 
-    positional arguments:
-      keyfile               path to the secret PEM-encoded key file, or '-' for stdin.
+positional arguments:
+keyfile               path to the secret PEM-encoded key file, or '-' for stdin.
 
-    options:
-      -h, --help            show this help message and exit
-      -d, --display         display only, extracted keys shown for loading in the OnlyKey Desktop App
-      --no-expired          do not show expired subkeys
-      --no-colors           do not output with colors. Usefull for piping output and use in scripts.
-      -p PASSPHRASE, --passphrase PASSPHRASE
-                            the passphrase of the key. Don't forget bash's history keeps everything !
+options:
+-h, --help            show this help message and exit
+-d, --display         display only, extracted keys shown for loading in the OnlyKey Desktop App
+--no-expired          do not show expired subkeys
+--no-colors           do not output with colors. Usefull for piping output and use in scripts.
+-p PASSPHRASE, --passphrase PASSPHRASE
+                      the passphrase of the key. Don't forget bash's history keeps everything !
 
-    Extract and load keys onto OnlyKey example:
-            gpg --export-secret-keys -a keyid | ./onlykey-cli-gpg-add-keys -
-            ./onlykey-cli-gpg-add-keys ~/mykey.asc --no-expired
-            Extract and display for loading in the OnlyKey Desktop App example:
-            ./onlykey-cli-gpg-add-keys ~/mykey.asc -d
-#+end_src
+Extract and load keys onto OnlyKey example:
+gpg --export-secret-keys -a keyid | ./onlykey-cli-gpg-add-keys -
+  yubikey.org ~/mykey.asc --no-expired
+Extract and display for loading in the OnlyKey Desktop App example:
+  ./onlykey-cli-gpg-add-keys ~/mykey.asc -d
 
 script output:
 #+begin_src shell
-      =====================================================
-      | OnlyKey Provisioning script                       |
-      =====================================================
-      Enter GPG key password to open key:
-      No secret primary key
+  # =====================================================
+  # | OnlyKey Provisioning script                       |
+  # =====================================================
+  # Enter GPG key password to open key:
+  # No secret primary key
 
-      Extracting subkeys...
-      subkey id: XXXXXXXXXXXXXXXX
-      subkey type: EdDSA
-      subkey usage: S
-      subkey size: 256 bits
+  # Extracting subkeys...
+  # subkey id: XXXXXXXXXXXXXXXX
+  # subkey type: EdDSA
+  # subkey usage: S
+  # subkey size: 256 bits
 
-      subkey id: XXXXXXXXXXXXXXXX
-      subkey type: ECDSA
-      subkey usage: E
-      subkey size: 256 bits
+  # subkey id: XXXXXXXXXXXXXXXX
+  # subkey type: ECDSA
+  # subkey usage: E
+  # subkey size: 256 bits
 
-      subkey id: XXXXXXXXXXXXXXXX
-      subkey type: EdDSA
-      subkey usage: A
-      subkey size: 256 bits
+  # subkey id: XXXXXXXXXXXXXXXX
+  # subkey type: EdDSA
+  # subkey usage: A
+  # subkey size: 256 bits
 
 
-      Keys without a private key:
-      keyid: b'XXXXXXXXXXXXXXXX', type: b'cESCA', algorithm: 22, keylength b'255'
+  # Keys without a private key:
+  # keyid: b'XXXXXXXXXXXXXXXX', type: b'cESCA', algorithm: 22, keylength b'255'
 
-      Keys not supported:
-      keyid: b'XXXXXXXXXXXXXXXX', type: b'a', algorithm: 22, keylength b'255'
+  # Keys not supported:
+  # keyid: b'XXXXXXXXXXXXXXXX', type: b'a', algorithm: 22, keylength b'255'
 
-      Keys to create:
+  # Keys to create:
 
-      Transfering keys ...
-      b's'
-      only_key.setkey(101, 'x', 's', 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
-      Successfully set ECC Key
-      only_key.setslot(29, MessageField.LABEL, XXXXXXXXXXXXXXXX)
-      Successfully set Label
-      b'e'
-      only_key.setkey(102, 'x', 'd', 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
-      Successfully set ECC Key
-      only_key.setslot(30, MessageField.LABEL, XXXXXXXXXXXXXXXX)
-      Successfully set Label
+  # Transfering keys ...
+  # b's'
+  # only_key.setkey(101, 'x', 's', 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+  # Successfully set ECC Key
+  # only_key.setslot(29, MessageField.LABEL, XXXXXXXXXXXXXXXX)
+  # Successfully set Label
+  # b'e'
+  # only_key.setkey(102, 'x', 'd', 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+  # Successfully set ECC Key
+  # only_key.setslot(30, MessageField.LABEL, XXXXXXXXXXXXXXXX)
+  # Successfully set Label
 
-      Keyslots:
-      <Slot 'RSA Key 1|b'''>
-      <Slot 'RSA Key 2|b'''>
-      <Slot 'RSA Key 3|b'''>
-      <Slot 'RSA Key 4|b'''>
-      <Slot 'ECC Key 1|b'XXXXXXXXXXXXXXXX''>
-      <Slot 'ECC Key 2|b'XXXXXXXXXXXXXXXX''>
-      <Slot 'ECC Key 3|b'''>
-      <Slot 'ECC Key 4|b'''>
-      <Slot 'ECC Key 5|b'''>
-      <Slot 'ECC Key 6|b'''>
-      <Slot 'ECC Key 7|b'''>
-      <Slot 'ECC Key 8|b'''>
-      <Slot 'ECC Key 9|b'''>
-      <Slot 'ECC Key 10|b'''>
-      <Slot 'ECC Key 11|b'''>
-      <Slot 'ECC Key 12|b'''>
-      <Slot 'ECC Key 13|b'''>
-      <Slot 'ECC Key 14|b'''>
-      <Slot 'ECC Key 15|b'''>
-      <Slot 'ECC Key 16|b'''>
+  # Keyslots:
+  # <Slot 'RSA Key 1|b'''>
+  # <Slot 'RSA Key 2|b'''>
+  # <Slot 'RSA Key 3|b'''>
+  # <Slot 'RSA Key 4|b'''>
+  # <Slot 'ECC Key 1|b'XXXXXXXXXXXXXXXX''>
+  # <Slot 'ECC Key 2|b'XXXXXXXXXXXXXXXX''>
+  # <Slot 'ECC Key 3|b'''>
+  # <Slot 'ECC Key 4|b'''>
+  # <Slot 'ECC Key 5|b'''>
+  # <Slot 'ECC Key 6|b'''>
+  # <Slot 'ECC Key 7|b'''>
+  # <Slot 'ECC Key 8|b'''>
+  # <Slot 'ECC Key 9|b'''>
+  # <Slot 'ECC Key 10|b'''>
+  # <Slot 'ECC Key 11|b'''>
+  # <Slot 'ECC Key 12|b'''>
+  # <Slot 'ECC Key 13|b'''>
+  # <Slot 'ECC Key 14|b'''>
+  # <Slot 'ECC Key 15|b'''>
+  # <Slot 'ECC Key 16|b'''>
 #+end_src
