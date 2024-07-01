@@ -1,4 +1,5 @@
 #+OPTIONS:   toc:2
+#+OPTIONS:   H:4
 
 * === P U R E - S E C U R I T Y ===
 This repository contains usefull information and scripts to enable security on (Arch) Linux systems.
