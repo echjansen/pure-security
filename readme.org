@@ -1,3 +1,5 @@
+#+OPTIONS:   toc:2
+
 * === P U R E - S E C U R I T Y ===
 This repository contains usefull information and scripts to enable security on (Arch) Linux systems.
 Assuming that you are setting up security ~from scratch~ the following steps would be common to execute:
@@ -28,6 +30,8 @@ Assuming that you have no GPG keys this description walks you through the proces
 4. Installing GPG keys on OnlyKey device, and / or
 5. Installing GPG kyes on YubiKey device
 The scripts in this repository will assist you with the required tasks.
+
+#+TOC: headlines 2
 
 ** Prerequisites
 When creating and transfering GnuPG keys, you are handling ~secret~ information. It is therefor best to execute the commands and scripts on a trusted system.
