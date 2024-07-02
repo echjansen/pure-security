@@ -20,6 +20,8 @@ Although the scripts are developed and tested on Arch Linux, they should work on
 | [[#onlykey-provision][onlykey-provision]]    | Transfer subkeys (created with gpg-provision) to OnlyKey device.                                               |
 |----------------------+----------------------------------------------------------------------------------------------------------------|
 
+For more detailed information on OnlyKey check these [[https://github.com/echjansen/pure-security/blob/main/onlykey.org][OnlyKey notes]].
+
 ** Installation Process
 Assuming that you have no GPG keys this description walks you through the process of:
 1. Creating a GPG key pair
