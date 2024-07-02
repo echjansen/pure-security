@@ -90,7 +90,7 @@ This scripts provisions a new GPG Key-chain according to best practices with the
 key on the Master key and [S][E][A] on sub-keys.
 The script configures the keychain in a ~/tmp~ directory, rather than in the default ~/.gnupg~.
 
-Required: [[https://github.com/echjansen/pure-security/blob/main/gpg-provision.py][gpg-provision.py]]
+Required: [[https://github.com/echjansen/pure-security/blob/main/scripts/gpg-provision.py][gpg-provision.py]]
 
 Usage:
 #+begin_src shell
@@ -144,7 +144,7 @@ Output:
 
 ** Clear Onlykey (script) (optional)
 
-Required: [[https://github.com/echjansen/pure-gpg/blob/main/scripts/onlykey-wipe.py][onlykey-wipe.py]]
+Required: [[https://github.com/echjansen/pure-security/blob/main/scripts/onlykey-wipe.py][onlykey-wipe.py]]
 
 If needed any keys already loaded on Onlykey can be quickly removed using the onlykey-wipe script.
 
@@ -199,7 +199,7 @@ Set Onlykey to configuration mode (hold button 6 for 5 seconds and enter your pi
 ** Transfer Sub-keys to OnlyKey (script)
 Set Onlykey to configuration mode (hold button 6 for 5 seconds and enter your pin. Onlykey will flash red).
 
-Required: [[https://github.com/echjansen/pure-security/blob/master/onlykey-provision.py][onlykey-provision.py]]
+Required: [[https://github.com/echjansen/pure-security/blob/main/scripts/gpg-provision.py][onlykey-provision.py]]
 
 This script transfers private subkeys to OnlyKey.
 If OnlyKey has already keys loaded, the script will strore the new sub-keys in the next available slots (there are 16 slots in total available for GPG keys). Alternatively, any pre-programmed keys can be wirped with the ~onlykey-wipe~ script.
