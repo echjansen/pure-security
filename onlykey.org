@@ -1,0 +1,439 @@
+* Onlykey Introduction
+
+** Key features
+- Hardware password manager - 24 unique accounts
+- Universal 2-factor token - TOTP, Yubikey OTP, U2F
+- SSH Authentication
+- OpenGPG Support
+- Self destruct feature
+- Plausible deniability feature
+- Encrypted backup
+- Automatic lock feature
+- Advanced hardware security
+
+[[../assets/onlykey.png?raw=true]]
+
+* Onlykey and GPG
+Onlykey is able to store the [S] Sign and [D] Encryp/Decrypt subkeys in ECC curve format. [A] Authentication is unfortunately not support, as Onlykey claims that Authentication and Signing are the same functions.
+
+** Onlykey steps
+The Onlykey documentation is very confusing and some exmaples provided do not work (at least not for me). The description here is complete and functional.
+
+The following steps are to be completed:
+1. Install Arch Linux (or any other Linux based distro)
+2. Install Python Tools
+3. Install Python Onlykey Tools
+4. Verify Python tool versions
+5. Clone this repository
+6. Set Onlykey sensible defaults
+7. Put Onlykey in configuration mode
+8. (optional) Remove any keys from OnlyKey with included script 'onlykey-wipe.py'
+9. Install GPG private sub-keys on OnlyKey with provided script 'onlykey-provision.py'
+10. Initialise onlykey-gpg agent
+11. Unplug, plug and unlock Onlykey
+12. Export GNUPGHOME environment variable
+13. GPG with Onlykey ready to use
+
+
+You will find the following tools here:
+- [[https://github.com/echjansen/pure-security/blob/main/scripts/onlykey-provision.py][Create new GPG key in the format required for OnlyKey]]
+- [[https://github.com/echjansen/pure-security/blob/main/scripts/onlykey-wipe.py][Wipe all keys from the OnlyKey]]
+- [[https://github.com/echjansen/pure-security/blob/main/scripts/onlykey-provision.py][Write GPG subkeys to OnlyKey]]
+
+** Install Python Tools (Arch Linux)
+Install the Python environment.
+#+begin_src shell
+  # Python environment
+  yay -S git libusb libfido2
+  yay -S python python-setuptools python-pip python-pgpy python-ptyprocess
+#+end_src
+
+** Install Onlykey Tools (for Arch Linux)
+Use the AUR helper to install the OnlyKey rule and optional app.
+#+begin_src shell
+  yay -S onlykey-udev
+  yay -S onlykey         # if you require the GUI application, optional
+#+end_src
+
+Install the Onlykey Tools providing the onlykey client tool and onlykey-gpg agent.
+#+begin_src shell
+  # onlykey-cli tool
+  pip install onlykey
+  # onlykey-gpg agent
+  pip install onlykey-agent
+#+end_src
+
+** Verify Python versions
+It is important that the correct versions of the Python tools are being used.
+Execute the folloiwing to command and compare the output.
+
+#+begin_src shell
+  onlykey-gpg --version
+  # onlykey-agent=1.1.15 lib-agent=1.0.6
+#+end_src
+
+** Set sensible defaults
+Rather than entering a series of numbers, simply touch any key.
+Place key into configuration mode. Hold button 6 for 5 seconds, and enter your PIN.
+Run the following:
+
+#+begin_src shell
+  onlykey-cli derivedkeymode 1
+  onlykey-cli storedkeymode 1
+#+end_src
+
+To place the Onlykey back into regular mode again unplug then plug back in.
+
+** Create new GPG Key-chain (script)
+
+This scripts provisions a new GPG Key-chain according to best practices with the [C] Certify
+key on the Master key and [S][E][A] on sub-keys.
+The script configures the keychain in a ~/tmp~ directory, rather than in the default ~/.gnupg~.
+
+Required: [[https://github.com/echjansen/pure-security/blob/main/gpg-provision.py][gpg-provision.py]]
+
+Usage:
+#+begin_src shell
+  ./gpg-provision.py
+#+end_src
+
+Output:
+#+begin_src shell
+  # ============================================================
+  # Create new GPG key pair.
+  # Inlcudes a Master [C] and subkeys [S][E][A]
+  # ============================================================
+  # Real Name: user
+  # Email: user@domain.com
+  # Please provide a password to protect the secret key chain:
+  # Please repeat the password:
+  # The password provided is very short. Do you wish to continue (y/n)?y
+  # 1. Curve 25519 (default), 2. RSA: 1
+  # Expiration in years (2y): 2y
+
+  # ============================================================
+  #  Selected values for GPG Key creation:
+  # ============================================================
+  #  GNUPGHOME:  /tmp/gpg_ajttd1g3
+  #  IDENTITY:   "user <user@domain.com>"
+  #  KEY TYPE:   25519
+  #  EXPIRATION: 2y
+  # Continue (y/n)?y
+
+  # gpg: keybox '/tmp/gpg_ajttd1g3/pubring.kbx' created
+  # gpg: /tmp/gpg_ajttd1g3/trustdb.gpg: trustdb created
+  # gpg: directory '/tmp/gpg_ajttd1g3/openpgp-revocs.d' created
+  # gpg: revocation certificate stored as '/tmp/gpg_ajttd1g3/openpgp-revocs.d/95D2F7D300BF2DDA30CD217C586757876553EB4C.rev'
+  # gpg: checking the trustdb
+  # gpg: marginals needed: 3  completes needed: 1  trust model: pgp
+  # gpg: depth: 0  valid:   1  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 1u
+
+  # ============================================================
+  #  Keys created and keys exported for backup
+  #  Check GPG_GNUPGHOME for backup files.
+  # ============================================================
+  # /tmp/gpg_ajttd1g3/pubring.kbx
+  # -----------------------------
+  # sec   ed25519/0x586757876553EB4C 2024-06-14 [C]
+  #       Key fingerprint = 95D2 F7D3 00BF 2DDA 30CD  217C 5867 5787 6553 EB4C
+  # uid                   [ultimate] user <user@domain.com>
+  # ssb   ed25519/0x525446A57AA572A2 2024-06-14 [S] [expires: 2026-06-14]
+  # ssb   cv25519/0x92B2CDB6AB2377E1 2024-06-14 [E] [expires: 2026-06-14]
+  # ssb   ed25519/0xBA403E26A834F226 2024-06-14 [A] [expires: 2026-06-14]
+#+end_src
+
+** Clear Onlykey (script) (optional)
+
+Required: [[https://github.com/echjansen/pure-gpg/blob/main/scripts/onlykey-wipe.py][onlykey-wipe.py]]
+
+If needed any keys already loaded on Onlykey can be quickly removed using the onlykey-wipe script.
+
+Set Onlykey to configuration mode (hold button 6 for 5 seconds and enter your pin. Onlykey will flash red).
+
+#+begin_src shell
+  # Wipe all stored keys form inserted Onlykey
+  ./onlykey-wipe.py
+  # Result:
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped ECC Key
+    # Successfully set Label
+    # Successfully wiped RSA Private Key
+    # Successfully set Label
+    # Successfully wiped RSA Private Key
+    # Successfully set Label
+    # Successfully wiped RSA Private Key
+    # Successfully set Label
+    # Successfully wiped RSA Private Key
+    # Successfully set Label
+#+end_src
+
+** Transfer Sub-keys to OnlyKey (script)
+Set Onlykey to configuration mode (hold button 6 for 5 seconds and enter your pin. Onlykey will flash red).
+
+Required: [[https://github.com/echjansen/pure-security/blob/master/onlykey-provision.py][onlykey-provision.py]]
+
+This script transfers private subkeys to OnlyKey.
+If OnlyKey has already keys loaded, the script will strore the new sub-keys in the next available slots (there are 16 slots in total available for GPG keys). Alternatively, any pre-programmed keys can be wirped with the ~onlykey-wipe~ script.
+
+usage:
+#+begin_src shell
+  ./onlykey-provision.py -d private-subkey.asc # Dryrun
+  ./onlykey-provision.py private-subkey.asc    # Transfer private keys
+#+end_src
+
+usage: onlykey-provision.py [-h] [-d] [--no-expired] [--no-colors] [-p PASSPHRASE] keyfile
+
+Extract secret subkeys from a OpenPGP key.
+
+This script will display and set the raw private keys and subkeys on your OnlyKey.
+Only run this on a secure trusted system.
+
+positional arguments:
+keyfile               path to the secret PEM-encoded key file, or '-' for stdin.
+
+options:
+-h, --help            show this help message and exit
+-d, --display         display only, extracted keys shown for loading in the OnlyKey Desktop App
+--no-expired          do not show expired subkeys
+--no-colors           do not output with colors. Usefull for piping output and use in scripts.
+-p PASSPHRASE, --passphrase PASSPHRASE
+                      the passphrase of the key. Don't forget bash's history keeps everything !
+
+Extract and load keys onto OnlyKey example:
+gpg --export-secret-keys -a keyid | ./onlykey-provision -
+  yubikey.org ~/mykey.asc --no-expired
+Extract and display for loading in the OnlyKey Desktop App example:
+  ./onlykey-provision ~/mykey.asc -d
+
+script output:
+#+begin_src shell
+  # =====================================================
+  # | OnlyKey Provisioning script                       |
+  # =====================================================
+  # Enter GPG key password to open key:
+  # No secret primary key
+
+  # Extracting subkeys...
+  # subkey id: XXXXXXXXXXXXXXXX
+  # subkey type: EdDSA
+  # subkey usage: S
+  # subkey size: 256 bits
+
+  # subkey id: XXXXXXXXXXXXXXXX
+  # subkey type: ECDSA
+  # subkey usage: E
+  # subkey size: 256 bits
+
+  # subkey id: XXXXXXXXXXXXXXXX
+  # subkey type: EdDSA
+  # subkey usage: A
+  # subkey size: 256 bits
+
+
+  # Keys without a private key:
+  # keyid: b'XXXXXXXXXXXXXXXX', type: b'cESCA', algorithm: 22, keylength b'255'
+
+  # Keys not supported:
+  # keyid: b'XXXXXXXXXXXXXXXX', type: b'a', algorithm: 22, keylength b'255'
+
+  # Keys to create:
+
+  # Transfering keys ...
+  # b's'
+  # only_key.setkey(101, 'x', 's', 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+  # Successfully set ECC Key
+  # only_key.setslot(29, MessageField.LABEL, XXXXXXXXXXXXXXXX)
+  # Successfully set Label
+  # b'e'
+  # only_key.setkey(102, 'x', 'd', 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+  # Successfully set ECC Key
+  # only_key.setslot(30, MessageField.LABEL, XXXXXXXXXXXXXXXX)
+  # Successfully set Label
+
+  # Keyslots:
+  # <Slot 'RSA Key 1|b'''>
+  # <Slot 'RSA Key 2|b'''>
+  # <Slot 'RSA Key 3|b'''>
+  # <Slot 'RSA Key 4|b'''>
+  # <Slot 'ECC Key 1|b'XXXXXXXXXXXXXXXX''>
+  # <Slot 'ECC Key 2|b'XXXXXXXXXXXXXXXX''>
+  # <Slot 'ECC Key 3|b'''>
+  # <Slot 'ECC Key 4|b'''>
+  # <Slot 'ECC Key 5|b'''>
+  # <Slot 'ECC Key 6|b'''>
+  # <Slot 'ECC Key 7|b'''>
+  # <Slot 'ECC Key 8|b'''>
+  # <Slot 'ECC Key 9|b'''>
+  # <Slot 'ECC Key 10|b'''>
+  # <Slot 'ECC Key 11|b'''>
+  # <Slot 'ECC Key 12|b'''>
+  # <Slot 'ECC Key 13|b'''>
+  # <Slot 'ECC Key 14|b'''>
+  # <Slot 'ECC Key 15|b'''>
+  # <Slot 'ECC Key 16|b'''>
+#+end_src
+
+Note: while loading the script displays where the sign-key and encrypt-key are stored. Make note of the slot numbers as these are required when initiating the onlykey-gpg agent.
+
+- ECC Key 1 --> 101
+- ECC Key 2 --> 102
+
+** Using Onlykey for GPG
+
+*** Activate the Onlykey GPG Agent
+The Final step in preparing Onlykey fo use is let gpg know that private keys are coming from Onlykey. This is achieved by the creation of the a subdirectory 'onlykey' in the ~/.gnupg folder. The following command creates the folder and sets up the stubs.
+
+Note that the command takes the full name, email address and slots where the subkeys are loaded on Onlykey. Slots for Curves are from 101 to 116, where as slots for RSA are 1 to 4.
+It further imports the public key.
+
+Note: set Onlykey in configuration mode (hold button 6 for 5 seconds and enter your pin. Onlykey will flash red).
+
+#+begin_src shell
+  # -v     : verbose
+  # -sk    : private sign key slot in Onlykey
+  # -dk    : private decrypt key slot in Onlykey
+  # -i     : import public key
+  onlykey-gpg init "FirstName LastName <emailaddress>" -v -sk 101 -dk 102 -i name.public.asc
+#+end_src
+
+The above creates a subfolder '~/.gnupg/onlykey', where the GPG stubs live.
+When using Onlykey ensure the environment variable GNUPGHOME is set to the '~\.gnupg\onlykey' directory.
+Best to put it in the .bashrc file:
+
+#+begin_src shell
+  export GNUPGHOME=~/.gnupg/onlykey
+#+end_src
+
+Onlykey is now prepared to sign and encrypt. Remove Onlykey from the USB port and plug it in again. Unlock Onlykey with your pin.
+
+*** Test Onlykey for signing
+The simplest test to try is to sign content, which can be achieved with the following command:
+#+begin_src shell
+  echo "Hello GPG" | gpg --clear-sign
+#+end_src
+
+*** Test Onlykey for encrypting
+Assuming the GNU 'pass' password manager is installed, execute the following commands:
+#+begin_src shell
+  pass init "Firstname Lastename <emailaddress>"    # Initialise the password store (~/.password-store)
+  pass generate Test 32                             # Generate an entry with a 32 character password
+  pass Test                                         # The Onlykey should flash BLUE for a keypress and decrypt
+#+end_src
+
+*** Export Subkeys from Onlykey
+Only for importation to another backup Onlykey (If you use different passwords the private keys separately to support the onlykey-cli-gpg-add-keys.py script)
+
+#+begin_src shell
+  gpg --output name.private.subkeys.asc --armor --export-options export-minimal --export-secret-subkeys keyid1! keyid2!
+  gpg --output name.public.asc --armor --export <UID>
+  ./onlykey-provision.py subkeys.asc
+  # The sk and dk will be ignored at runtime as keys will be found by the keygrips found on the keylabel.
+  onlykey-gpg init "FirstName LastName <emailaddress>" -sk 101 -dk 102 -i name.public.asc
+#+end_src
+
+* Onlykey and SSH
+
+** Generating SSH Keys
+Onlykey generates a unique SHH public key for every host (the Onlykey is unique):
+#+begin_src shell
+  onlykey-agent identity@myhost
+  # ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJcNZQFm742/hIf6KvbaApQM1VzoW6L2BHANZ4KgiU0o <ssh://identity@myhost|ed25519>
+#+end_src
+
+Alternatively, create a SSH public key and sign it with a GPG signing key stored in the on the Onlykey (the GPG key is unique):
+#+begin_src shell
+  onlykey-agent identity@myhost -sk ECC2
+#+end_src
+
+** Use Onlykey to connect to Github with a GPG key
+To store a SSH signed public key in a file using a GPG signing key:
+#+begin_src shell
+  onlykey-agent git@github.com -sk ECC2 > ~/.ssh/github.pub
+  # ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIXzPsm6lkM6xSADnwh/S1IGLlU+dHE8M/xEp2qeol2w <ssh://git@github.com|ed25519>
+#+end_src
+
+Add the following configuration to your ~/.ssh/config file:
+#+begin_src shell
+  Host github.com
+                IdentityFile ~/.ssh/github.pub
+#+end_src
+
+Use the following Bash alias for convenient Git operations (best placed in your ~~.bashrc~~:
+#+begin_src shell
+  alias ssh-shell='onlykey-agent ~/.ssh/github.pub -v --shell'
+#+end_src
+
+* Setup systemd
+[[https://docs.crp.to/onlykey-agent.html#how-do-i-start-the-agent-as-a-systemd-unit][Start agent as systemd]]
+
+* Terminology
+
+When listing Secret keys you may see:
+#+begin_src shell
+  gpg --list-secret-keys # or gpg -K
+  # sec  = Secret (aka Private) and Public key exists for the Master key.
+  # sec# = Master key secret is not present, only a "stub" of the private key. This is normal when using subkeys without their Master key being present.
+  # uid  = User ID. Combination of name, email address and an optional comment. You can have multiple UIDs, add and remove (revoke) them without breaking your Master key. If you add a photo, it will be a new uid added to the key. When people "sign your key", they are really signing one or more of these UIDs.
+  # ssb  = Subkey Certified by the master key.
+  # ssb> = Subkey where the private portion is on another device.
+#+end_src
+
+When listing Public keys you may see:
+#+begin_src shell
+  gpg --list-keys # or gpg -k
+  # pub = Public portion of your Master keypair.
+  # sub = Subkey (you will never actually work with a public key for a Subkey, only the Master).
+#+end_src
+
+When editing a key you may see:
+#+begin_src shell
+  gpg --edit-key <UID>
+  # sub* = The star indicates the particular Subkey is selected for editing.
+  # sig!3 = You see this after running the check command. The number explains the type of signature (see below).
+#+end_src
+
+When listing signatures you may see:
+#+begin_src shell
+  gpg --list-sigs <UID>
+  # sig , sig 1, sig 2, sig 3 = How thoroughly was the identity claim verified (sig=unknown ... sig 3=extremely thorough).
+#+end_src
+
+There are different types of keys, you can see this on the right as "usage":
+- usage: C = Certify other keys, IE: this is your Master key.
+- usage: S = Sign messages so people know it was sent from you. This can be a Subkey.
+- usage: E = Encrypt messages to other people. This can be a Subkey.
+- usage: A = Authenticate yourself, for example when using SSH to log into a server. This can be a Subkey.
+
+* Other Resources
+- [[https://docs.onlykey.io/onlykey-agent.html][Onlykey SSH and GPG agent]]
+- [[https://github.com/trustcrypto/OnlyKey-App/issues/166#issuecomment-890157049][Truscrypto thread on adding support for subkeys]]
+- [[https://gpg.wtf/][Rumblings on GPG]]
