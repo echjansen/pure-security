@@ -11,7 +11,7 @@
 - Automatic lock feature
 - Advanced hardware security
 
-[[https://github.com/echjansen/pure-security/assets/onlykey.png?raw=true]]
+[[https://github.com/echjansen/pure-security/blob/main/assets/onlykey.png?raw=true]]
 
 * Onlykey and GPG
 Onlykey is able to store the [S] Sign and [D] Encryp/Decrypt subkeys in ECC curve format. [A] Authentication is unfortunately not support, as Onlykey claims that Authentication and Signing are the same functions.
