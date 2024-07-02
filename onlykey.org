@@ -27,7 +27,7 @@ The following steps are to be completed:
 5. Clone this repository
 6. Set Onlykey sensible defaults
 7. Put Onlykey in configuration mode
-8. (optional) Remove any keys from OnlyKey with included script 'onlykey-wipe.py'
+8. (optional) Remove any keys from OnlyKey with included script 'onlykey-wipe.sh'
 9. Install GPG private sub-keys on OnlyKey with provided script 'onlykey-provision.py'
 10. Initialise onlykey-gpg agent
 11. Unplug, plug and unlock Onlykey
@@ -37,7 +37,7 @@ The following steps are to be completed:
 
 You will find the following tools here:
 - [[https://github.com/echjansen/pure-security/blob/main/scripts/onlykey-provision.py][Create new GPG key in the format required for OnlyKey]]
-- [[https://github.com/echjansen/pure-security/blob/main/scripts/onlykey-wipe.py][Wipe all keys from the OnlyKey]]
+- [[https://github.com/echjansen/pure-security/blob/main/scripts/onlykey-wipe.sh][Wipe all keys from the OnlyKey]]
 - [[https://github.com/echjansen/pure-security/blob/main/scripts/onlykey-provision.py][Write GPG subkeys to OnlyKey]]
 
 ** Install Python Tools (Arch Linux)
@@ -144,7 +144,7 @@ Output:
 
 ** Clear Onlykey (script) (optional)
 
-Required: [[https://github.com/echjansen/pure-security/blob/main/scripts/onlykey-wipe.py][onlykey-wipe.py]]
+Required: [[https://github.com/echjansen/pure-security/blob/main/scripts/onlykey-wipe.sh][onlykey-wipe.sh]]
 
 If needed any keys already loaded on Onlykey can be quickly removed using the onlykey-wipe script.
 
@@ -152,7 +152,7 @@ Set Onlykey to configuration mode (hold button 6 for 5 seconds and enter your pi
 
 #+begin_src shell
   # Wipe all stored keys form inserted Onlykey
-  ./onlykey-wipe.py
+  ./onlykey-wipe.sh
   # Result:
     # Successfully wiped ECC Key
     # Successfully set Label
