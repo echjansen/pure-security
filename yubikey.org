@@ -1,3 +1,5 @@
+#+startup: num
+
 * Yubikey Introduction
 
 ** Key features
@@ -18,15 +20,16 @@
 
 [[https://github.com/echjansen/pure-security/blob/main/assets/yubikey5.png?raw=true]]
 
-*** YubiKey 5.7 firmware
-- 100 Passkeys
-- 24  PIV certificates
-- 64  OATH credentials
-- 2   OTP seeds
-- RSA-3072 and RSA-4096 support
-- Ed25519 and X25519 support
+** YubiKey firmware
+The firmware of a YubiKey can not be changed (it's read-only). This means that when new features become available, you would need to purchase that latest version of YubiKey. Also be aware of the firmware version when purchasing.
 
-*** YubiKey 5 Pincodes
+| Firmware  | FIDO2 | FIDO U2F  | PIV | OATH-TOTP | OTP                               | OPENPGP           |
+| 5.7       |   100 | unlimited |   4 |        64 | 2 credentials, unlimited services | 3 subkeys [S E A] |
+| 5.0 - 5.6 |    25 | unlimited |   4 |        32 | 2 credentials, unlimited services | 3 subkeys [S E A] |
+
+There are many different YubIkey types and versions available. Check [[https://support.yubico.com/hc/en-us/categories/360002541740-Devices][YubiKey devices]] webpage for the specifications.
+
+** YubiKey 5 Pincodes
 The YubiKey 5 offers several  security protocols. Therefor multiple PIN codes needs to be set. In total, the YubiKey 5 has 5 PIN codes, 1 PUK admin code, and 1 Reset code.
 
 |-----------+--------------+--------------------------------------------------------------|
@@ -47,32 +50,14 @@ The YubiKey 5 offers several  security protocols. Therefor multiple PIN codes ne
 |           |              | Admin PUK : 12345678                                         |
 |-----------+--------------+--------------------------------------------------------------|
 
-
-** Configuration
-
-Configuring the YubiKey is a straight forward process with the help of the ~yubikey-manager~ python library. It contains command sections that assist with the configuration modes:
-
--  info     show general information
--  list     list connected YubiKeys
--  script   run a python script
--  config   configure the YubiKey, enable or disable applications
--  fido     manage the FIDO applications
--  hsmauth  manage the YubiHSM Auth application
--  oath     manage the OATH application
--  openpgp  manage the OpenPGP application
--  otp      manage the YubiOTP application
--  piv      manage the PIV application
-
-These notes provide some sample scripts to setup your assumed new ~5 Series YubiKey~.
-
-** Prerequisites
+* Prerequisites
 
 Install the ~yubikey-manager~ software:
 #+begin_src shell
   pacman -S pcscd yubikey-manager
 #+end_src
 
-From here can execute configuration commands, such as:
+This provides the YubiKey client software which can validated with:
 
 #+begin_src shell
   ykman info
@@ -92,6 +77,23 @@ From here can execute configuration commands, such as:
   # OpenPGP             Enabled     Enabled
   # YubiHSM Auth        Enabled     Enabled
 #+end_src
+
+* Configuration
+
+Configuring the YubiKey is a straight forward process with the help of the ~yubikey-manager~ python library. It contains command sections that assist with the configuration modes:
+
+| info    | show general information                              |
+| list    | list connected YubiKeys                               |
+| script  | run a python script                                   |
+| config  | configure the YubiKey, enable or disable applications |
+| fido    | manage the FIDO applications                          |
+| hsmauth | manage the YubiHSM Auth application                   |
+| oath    | manage the OATH application                           |
+| openpgp | manage the OpenPGP application                        |
+| otp     | manage the YubiOTP application                        |
+| piv     | manage the PIV application                            |
+
+These notes provide some sample scripts to setup your assumed new ~5-Series YubiKey~.
 
 ** 1 Configure OpenPGP
 *** 1.1 Enable Mode
