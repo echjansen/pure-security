@@ -53,7 +53,9 @@ The YubiKey 5 offers several  security protocols. Therefor multiple PIN codes ne
 ** Software Installation
 Install the ~yubikey-manager~ software:
 #+begin_src shell
-  pacman -S pcscd yubikey-manager
+  sudo pacman -S yubikey-manager
+  sudo systemctl enable pcscd.service
+  sudo systemctl start pcscd.service
 #+end_src
 
 ** YubiKey hardware
@@ -301,7 +303,7 @@ To test the functionality of encryption and decryption test the YubKey with the 
   [user@archlinux ~]$ pass test
   # a=l~65v1d#c"L)O%99_zEotE4YY60Pm=
 #+end_src
-** Configure YubiKey on new machine
+** Configure YubiKey on another machine
 Assuming that no existing GPG keys exist on the machine, follow to following steps to setup GnuPG to use an existing (configured) YubiKey on a new computer.
 *** Import public key
 **** Import public key from github
@@ -319,3 +321,40 @@ Assuming at some stage you have configured github with your public key for signi
   # gpg:               imported: 1
 #+end_src
 *** Create stub for YubIkey
+Once the public key has been imported, the gpg stubs can be created with the following command:
+
+#+begin_src shell
+  [user@t570 ~]$ gpg --card-status
+  # Reader ...........: 1050:0407:X:0
+  # Application ID ...: D2760001240100000006250875120000
+  # Application type .: OpenPGP
+  # Version ..........: 3.4
+  # Manufacturer .....: Yubico
+  # Serial number ....: XXXXXXXX
+  # Name of cardholder: [not set]
+  # Language prefs ...: [not set]
+  # Salutation .......:
+  # URL of public key : [not set]
+  # Login data .......: user
+  # Signature PIN ....: not forced
+  # Key attributes ...: ed25519 cv25519 ed25519
+  # Max. PIN lengths .: 127 127 127
+  # PIN retry counter : 3 0 3
+  # Signature counter : 0
+  # KDF setting ......: single
+  # UIF setting ......: Sign=off Decrypt=off Auth=off
+  # Signature key ....: 638B FE47 E2AD 28BA CE3A  B114 F11A 65E1 A88F 0237
+  #       created ....: 2024-06-30 21:44:16
+  # Encryption key....: A4CB 2108 6F42 2142 6485  FA3C A8B1 1410 DB58 AC7A
+  #       created ....: 2024-06-30 21:44:17
+  # Authentication key: 14A3 3094 4499 4F9F 430D  8927 952E 563E 4CEB 347B
+  #       created ....: 2024-06-30 21:44:17
+  # General key info..: sub  ed25519/F11A65E1A88F0237 2024-06-30 user <user@email.com>
+  # sec#  ed25519/C8A9786CD87AEECB  created: 2024-06-30  expires: never
+  # ssb>  ed25519/F11A65E1A88F0237  created: 2024-06-30  expires: never
+  #                                 card-no: 0006 25087512
+  # ssb>  cv25519/A8B11410DB58AC7A  created: 2024-06-30  expires: never
+  #                                 card-no: 0006 25087512
+  # ssb>  ed25519/952E563E4CEB347B  created: 2024-06-30  expires: never
+  #                                 card-no: 0006 25087512
+#+end_src
