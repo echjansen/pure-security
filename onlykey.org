@@ -1,4 +1,8 @@
+#+startup: num
+
 * Onlykey Introduction
+
+[[https://github.com/echjansen/pure-security/blob/main/assets/onlykey.png?raw=true]]
 
 ** Key features
 - Hardware password manager - 24 unique accounts
@@ -11,7 +15,14 @@
 - Automatic lock feature
 - Advanced hardware security
 
-[[https://github.com/echjansen/pure-security/blob/main/assets/onlykey.png?raw=true]]
+** OnlyKey Firmware
+The firmware of OnlyKey can be updated, but storage is limited by hardware.
+The following table shows storage details for OnlyKey.
+
+| Firmware | FIDO2 | FIDO U2F  | PIV | OATH-TOTP | OTP | OPENPGP          |
+|    3.0.4 |    16 | unlimited | -   | -         | -   | 16 subkeys [S E] |
+
+There are several OnlyKey firmware releases available. Check the [[https://github.com/trustcrypto/onlykey-firmware/releases][OnlyKey firmware]] webpage for further specifications.
 
 * Onlykey and GPG
 Onlykey is able to store the [S] Sign and [D] Encryp/Decrypt subkeys in ECC curve format. [A] Authentication is unfortunately not support, as Onlykey claims that Authentication and Signing are the same functions.

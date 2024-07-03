@@ -1,8 +1,7 @@
 #+startup: num
 
 * Yubikey Introduction
-
-** Key features
+** Key Features
 - Strong 2FA   - hardware authenticator
 - Strong MFA   - hardware authenticator and PIN or Biometric
 - Passwordless - hardware authenticator and PIN without passwords (FIDO2/WebAuthn/passkey)
@@ -18,16 +17,16 @@
 - IP68
 - Non-upgradable firmware
 
-[[https://github.com/echjansen/pure-security/blob/main/assets/yubikey5.png?raw=true]]
+[[https://github.com/user/pure-security/blob/main/assets/yubikey5.png?raw=true]]
 
-** YubiKey firmware
+** YubiKey Firmware
 The firmware of a YubiKey can not be changed (it's read-only). This means that when new features become available, you would need to purchase that latest version of YubiKey. Also be aware of the firmware version when purchasing.
 
 | Firmware  | FIDO2 | FIDO U2F  | PIV | OATH-TOTP | OTP                               | OPENPGP           |
 | 5.7       |   100 | unlimited |   4 |        64 | 2 credentials, unlimited services | 3 subkeys [S E A] |
 | 5.0 - 5.6 |    25 | unlimited |   4 |        32 | 2 credentials, unlimited services | 3 subkeys [S E A] |
 
-There are many different YubIkey types and versions available. Check [[https://support.yubico.com/hc/en-us/categories/360002541740-Devices][YubiKey devices]] webpage for the specifications.
+There are many different YubIkey types and versions available. Check the [[https://support.yubico.com/hc/en-us/categories/360002541740-Devices][YubiKey devices]] webpage for further specifications.
 
 ** YubiKey 5 Pincodes
 The YubiKey 5 offers several  security protocols. Therefor multiple PIN codes needs to be set. In total, the YubiKey 5 has 5 PIN codes, 1 PUK admin code, and 1 Reset code.
@@ -51,13 +50,14 @@ The YubiKey 5 offers several  security protocols. Therefor multiple PIN codes ne
 |-----------+--------------+--------------------------------------------------------------|
 
 * Prerequisites
-
+** Software Installation
 Install the ~yubikey-manager~ software:
 #+begin_src shell
   pacman -S pcscd yubikey-manager
 #+end_src
 
-This provides the YubiKey client software which can validated with:
+** YubiKey hardware
+Withe the software installed, plug in the ~YubiKey~ and check the type and firmware to understand the capabilities:
 
 #+begin_src shell
   ykman info
@@ -94,20 +94,228 @@ Configuring the YubiKey is a straight forward process with the help of the ~yubi
 | piv     | manage the PIV application                            |
 
 These notes provide some sample scripts to setup your assumed new ~5-Series YubiKey~.
-
-** 1 Configure OpenPGP
-*** 1.1 Enable Mode
-The ~YubiKey~ is able to provide ~secret~ information for many protocols. By default all modes are enabled, but this might be more than is wanted. Enable the wanted modes with the following commands:
-
-Supported modes (version 5):
-- OTP
-- U2F
-- FIDO2
-- OATH
-- PIV
-- OPENPGP
-- HSMAUTH
+** Reseting YubiKey
+** Configure YubiKey for OpenPGP
+*** Enable OpenPGP Mode
+The enable OpenPGP mode on ~YubiKey~ execute the following commands:
 
 #+begin_src shell
-  ykman config usb -f -e OPENPGP -e OTP
+  ykman config usb -f -e OPENPGP
 #+end_src
+*** Enable Key Derived Function (KDF)
+Key Derived Function enables YubiKey to store the hash of a PIN rather than the PIN itself, preventing the PIN to be transfered in plan text.
+
+NOTE: KDF must be enabled BEFORE changing the PINs or moving sub-keys to YubiKey.
+
+#+begin_src shell
+  gpg --card-edit
+  gpg/card> admin
+  # Admin commands are allowed
+  gpg/card> kdf-setup
+  # Enabling KDF ensures PIN is not stored on the YubiKey, only its hash. It needs to be done before changing PIN. More.
+#+end_src
+
+*** Transfer GPG sub-keys to YubiKey
+Assuming you have generated the necessary GPG key-chain using the [[https://github.com/user/pure-security/blob/main/scripts/gpg-provision.py][gpg-provision.py]] script, the gpg key-chain is stored in the ~/tmp/gpg_xxxxx~ folder.
+To instruct the GnuPG utility where the gpg-keychain is stored, execute the following pointing to the correct folder:
+
+#+begin_src shell
+  export GNUPGHOME=/tmp/gpg_xxxxx
+#+end_src
+
+From here use the GnuPG utility to edit the key, select the key, and send to card:
+
+#+begin_src shell
+  [user@archlinux ~]$ gpg --edit-key user
+  # Secret key is available.
+
+  # sec  ed25519/0xC8A9786CD87AEECB
+  #      created: 2024-06-30  expires: never       usage: C
+  #      trust: ultimate      validity: ultimate
+  # ssb  ed25519/0xF11A65E1A88F0237
+  #      created: 2024-06-30  expires: never       usage: S
+  # ssb  cv25519/0xA8B11410DB58AC7A
+  #      created: 2024-06-30  expires: never       usage: E
+  # ssb  ed25519/0x952E563E4CEB347B
+  #      created: 2024-06-30  expires: never       usage: A
+  # [ultimate] (1). user <user@email.com>
+
+  gpg> key 1
+
+  # sec  ed25519/0xC8A9786CD87AEECB
+  #      created: 2024-06-30  expires: never       usage: C
+  #      trust: ultimate      validity: ultimate
+  # ssb* ed25519/0xF11A65E1A88F0237
+  #      created: 2024-06-30  expires: never       usage: S
+  # ssb  cv25519/0xA8B11410DB58AC7A
+  #      created: 2024-06-30  expires: never       usage: E
+  # ssb  ed25519/0x952E563E4CEB347B
+  #      created: 2024-06-30  expires: never       usage: A
+  # [ultimate] (1). user <user@email.com>
+
+  gpg> keytocard
+
+  # Please select where to store the key:
+  #    (1) Signature key
+  #    (3) Authentication key
+
+  Your selection? 1
+
+  # sec  ed25519/0xC8A9786CD87AEECB
+  #      created: 2024-06-30  expires: never       usage: C
+  #      trust: ultimate      validity: ultimate
+  # ssb* ed25519/0xF11A65E1A88F0237
+  #      created: 2024-06-30  expires: never       usage: S
+  # ssb  cv25519/0xA8B11410DB58AC7A
+  #      created: 2024-06-30  expires: never       usage: E
+  # ssb  ed25519/0x952E563E4CEB347B
+  #      created: 2024-06-30  expires: never       usage: A
+  # [ultimate] (1). user <user@email.com>
+
+  # Note: the local copy of the secret key will only be deleted with "save".
+
+
+  gpg> key 2
+
+  # sec  ed25519/0xC8A9786CD87AEECB
+  #      created: 2024-06-30  expires: never       usage: C
+  #      trust: ultimate      validity: ultimate
+  # ssb  ed25519/0xF11A65E1A88F0237
+  #      created: 2024-06-30  expires: never       usage: S
+  # ssb* cv25519/0xA8B11410DB58AC7A
+  #      created: 2024-06-30  expires: never       usage: E
+  # ssb  ed25519/0x952E563E4CEB347B
+  #      created: 2024-06-30  expires: never       usage: A
+  # [ultimate] (1). user <user@email.com>
+
+  gpg> keytocard
+  # Please select where to store the key:
+  #    (2) Encryption key
+  Your selection? 2
+
+  # sec  ed25519/0xC8A9786CD87AEECB
+  #      created: 2024-06-30  expires: never       usage: C
+  #      trust: ultimate      validity: ultimate
+  # ssb  ed25519/0xF11A65E1A88F0237
+  #      created: 2024-06-30  expires: never       usage: S
+  # ssb* cv25519/0xA8B11410DB58AC7A
+  #      created: 2024-06-30  expires: never       usage: E
+  # ssb  ed25519/0x952E563E4CEB347B
+  #      created: 2024-06-30  expires: never       usage: A
+  # [ultimate] (1). user <user@email.com>
+
+  # Note: the local copy of the secret key will only be deleted with "save".
+
+  gpg> key 3
+
+  # sec  ed25519/0xC8A9786CD87AEECB
+  #      created: 2024-06-30  expires: never       usage: C
+  #      trust: ultimate      validity: ultimate
+  # ssb  ed25519/0xF11A65E1A88F0237
+  #      created: 2024-06-30  expires: never       usage: S
+  # ssb  cv25519/0xA8B11410DB58AC7A
+  #      created: 2024-06-30  expires: never       usage: E
+  # ssb* ed25519/0x952E563E4CEB347B
+  #      created: 2024-06-30  expires: never       usage: A
+  # [ultimate] (1). user <user@email.com>
+
+  gpg> keytocard
+  # Please select where to store the key:
+  #    (3) Authentication key
+  Your selection? 3
+
+  # sec  ed25519/0xC8A9786CD87AEECB
+  #      created: 2024-06-30  expires: never       usage: C
+  #      trust: ultimate      validity: ultimate
+  # ssb  ed25519/0xF11A65E1A88F0237
+  #      created: 2024-06-30  expires: never       usage: S
+  # ssb  cv25519/0xA8B11410DB58AC7A
+  #      created: 2024-06-30  expires: never       usage: E
+  # ssb* ed25519/0x952E563E4CEB347B
+  #      created: 2024-06-30  expires: never       usage: A
+  # [ultimate] (1). user <user@email.com>
+
+  # Note: the local copy of the secret key will only be deleted with "save".
+
+  gpg> save
+#+end_src
+
+*** Validate GPG sub-keys transfer to YubiKey
+Validate that the sub-keys have been transfered to the YubiKey, which will be the case if the gpg folder has stubs for the sub-keys identified with ~sbb>~.
+
+#+begin_src shell
+  [user@archlinux ~]$ gpg -K
+  # /home/user/test/.gnupg/pubring.kbx
+  # ---------------------------------------
+  # sec#  ed25519/0xC8A9786CD87AEECB 2024-06-30 [C]
+  #       Key fingerprint = F4F0 55D1 4680 AAD7 1456  5D63 C8A9 786C D87A EECB
+  # uid                   [ultimate] user <user@email.com>
+  # ssb>  ed25519/0xF11A65E1A88F0237 2024-06-30 [S]
+  # ssb>  cv25519/0xA8B11410DB58AC7A 2024-06-30 [E]
+  # ssb>  ed25519/0x952E563E4CEB347B 2024-06-30 [A]
+#+end_src
+
+#+begin_src shell
+  [user@archlinux ~]$ gpg --card-status
+  # Reader ...........: 1050:0407:X:0
+  # Application ID ...: D2760001240100000006250875120000
+  # Application type .: OpenPGP
+  # Version ..........: 3.4
+  # Manufacturer .....: Yubico
+  # Serial number ....: XXXXXXXX
+  # Name of cardholder: [not set]
+  # Language prefs ...: [not set]
+  # Salutation .......:
+  # URL of public key : [not set]
+  # Login data .......: user
+  # Signature PIN ....: not forced
+  # Key attributes ...: ed25519 cv25519 ed25519
+  # Max. PIN lengths .: 127 127 127
+  # PIN retry counter : 3 0 3
+  # Signature counter : 0
+  # KDF setting ......: single
+  # UIF setting ......: Sign=off Decrypt=off Auth=off
+  # Signature key ....: 638B FE47 E2AD 28BA CE3A  B114 F11A 65E1 A88F 0237
+  #       created ....: 2024-06-30 21:44:16
+  # Encryption key....: A4CB 2108 6F42 2142 6485  FA3C A8B1 1410 DB58 AC7A
+  #       created ....: 2024-06-30 21:44:17
+  # Authentication key: 14A3 3094 4499 4F9F 430D  8927 952E 563E 4CEB 347B
+  #       created ....: 2024-06-30 21:44:17
+  # General key info..: sub  ed25519/0xF11A65E1A88F0237 2024-06-30 user <user@email.com>
+  # sec#  ed25519/0xC8A9786CD87AEECB  created: 2024-06-30  expires: never
+  # ssb>  ed25519/0xF11A65E1A88F0237  created: 2024-06-30  expires: never
+  #                                   card-no: 0006 25087512
+  # ssb>  cv25519/0xA8B11410DB58AC7A  created: 2024-06-30  expires: never
+  #                                   card-no: 0006 25087512
+  # ssb>  ed25519/0x952E563E4CEB347B  created: 2024-06-30  expires: never
+  #                                   card-no: 0006 25087512
+#+end_src
+
+*** Test GPG Encryption
+To test the functionality of encryption and decryption test the YubKey with the pass functionality:
+
+#+begin_src shell
+  [user@archlinux ~]$ pass generate test 32
+  # The generated password for test is:
+  # a=l~65v1d#c"L)O%99_zEotE4YY60Pm=
+  [user@archlinux ~]$ pass test
+  # a=l~65v1d#c"L)O%99_zEotE4YY60Pm=
+#+end_src
+** Configure YubiKey on new machine
+Assuming that no existing GPG keys exist on the machine, follow to following steps to setup GnuPG to use an existing (configured) YubiKey on a new computer.
+*** Import public key
+**** Import public key from github
+Assuming at some stage you have configured github with your public key for signing your commits, you can use the following command to import your public key from github:
+
+#+begin_src shell
+  [user@archlinux ~]$ curl https://github.com/user.gpg | gpg --import
+  # gpg: keybox '/home/user/test/pubring.kbx' created
+  #   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+  #                                  Dload  Upload   Total   Spent    Left  Speed
+  # 100  1273  100  1273    0     0   2295      0 --:--:-- --:--:-- --:--:--  2301
+  # gpg: /home/user/test/trustdb.gpg: trustdb created
+  # gpg: key C8A9786CD87AEECB: public key "user <user@outlook.com>" imported
+  # gpg: Total number processed: 1
+  # gpg:               imported: 1
+#+end_src
+*** Create stub for YubIkey
