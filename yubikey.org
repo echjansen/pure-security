@@ -1,0 +1,111 @@
+* Yubikey Introduction
+
+** Key features
+- Strong 2FA   - hardware authenticator
+- Strong MFA   - hardware authenticator and PIN or Biometric
+- Passwordless - hardware authenticator and PIN without passwords (FIDO2/WebAuthn/passkey)
+- UTF
+- FIDO
+- FIDO2
+- Smart Card (PIV)
+- OpenPGP
+- OTP
+- OATH-TOTP
+- OATH_HOTP
+- USB-A, USB-C, NFC, Lightning communication
+- IP68
+- Non-upgradable firmware
+
+[[https://github.com/echjansen/pure-security/blob/main/assets/yubikey5.png?raw=true]]
+
+*** YubiKey 5.7 firmware
+- 100 Passkeys
+- 24  PIV certificates
+- 64  OATH credentials
+- 2   OTP seeds
+- RSA-3072 and RSA-4096 support
+- Ed25519 and X25519 support
+
+*** YubiKey 5 Pincodes
+The YubiKey 5 offers several  security protocols. Therefor multiple PIN codes needs to be set. In total, the YubiKey 5 has 5 PIN codes, 1 PUK admin code, and 1 Reset code.
+
+|-----------+--------------+--------------------------------------------------------------|
+| Interface | PINs         | Description                                                  |
+|-----------+--------------+--------------------------------------------------------------|
+| FIDO2     | 1 PIN        | Authenticate to services without a password.                 |
+|           |              | No default Pin                                               |
+|           |              | The PIN is set during the first time link to service         |
+|-----------+--------------+--------------------------------------------------------------|
+| GPG       | 2 PINs       | Encrypting, decrypting, signing, and SSH                     |
+|           | 1 Reset      | Defaults                                                     |
+|           |              | User Pin  : 123456                                           |
+|           |              | Admin PUK : 12345678                                         |
+|-----------+--------------+--------------------------------------------------------------|
+| PIV       | 2 PINs       | x509 certificates / keypairs. Bitlocker, Veracrypt, SSH, etc |
+|           | 1 Management | Defaults                                                     |
+|           |              | User Pin  : 123456                                           |
+|           |              | Admin PUK : 12345678                                         |
+|-----------+--------------+--------------------------------------------------------------|
+
+
+** Configuration
+
+Configuring the YubiKey is a straight forward process with the help of the ~yubikey-manager~ python library. It contains command sections that assist with the configuration modes:
+
+-  info     show general information
+-  list     list connected YubiKeys
+-  script   run a python script
+-  config   configure the YubiKey, enable or disable applications
+-  fido     manage the FIDO applications
+-  hsmauth  manage the YubiHSM Auth application
+-  oath     manage the OATH application
+-  openpgp  manage the OpenPGP application
+-  otp      manage the YubiOTP application
+-  piv      manage the PIV application
+
+These notes provide some sample scripts to setup your assumed new ~5 Series YubiKey~.
+
+** Prerequisites
+
+Install the ~yubikey-manager~ software:
+#+begin_src shell
+  pacman -S pcscd yubikey-manager
+#+end_src
+
+From here can execute configuration commands, such as:
+
+#+begin_src shell
+  ykman info
+  # Device type: YubiKey 5 NFC
+  # Serial number: XXXXXXXX
+  # Firmware version: 5.4.3
+  # Form factor: Keychain (USB-A)
+  # Enabled USB interfaces: OTP, FIDO, CCID
+  # NFC transport is enabled
+
+  # Applications        USB         NFC
+  # Yubico OTP          Enabled     Enabled
+  # FIDO U2F            Enabled     Enabled
+  # FIDO2               Enabled     Enabled
+  # OATH                Enabled     Enabled
+  # PIV                 Enabled     Enabled
+  # OpenPGP             Enabled     Enabled
+  # YubiHSM Auth        Enabled     Enabled
+#+end_src
+
+** 1 Configure OpenPGP
+*** 1.1 Enable Mode
+The ~YubiKey~ is able to provide ~secret~ information for many protocols. By default all modes are enabled, but this might be more than is wanted. Enable the wanted modes with the following commands:
+
+Supported modes (version 5):
+- OTP
+- U2F
+- FIDO2
+- OATH
+- PIV
+- OPENPGP
+- HSMAUTH
+
+#+begin_src shell
+  ykman config usb -f -e OPENPGP -e OTP
+#+end_src
