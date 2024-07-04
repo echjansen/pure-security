@@ -1,6 +1,9 @@
 #+startup: num
 
 * Yubikey Introduction
+
+[[https://github.com/echjansen/pure-security/blob/main/assets/yubikey5.png?raw=true]]
+
 ** Key Features
 - Strong 2FA   - hardware authenticator
 - Strong MFA   - hardware authenticator and PIN or Biometric
@@ -17,8 +20,6 @@
 - IP68
 - Non-upgradable firmware
 
-[[https://github.com/user/pure-security/blob/main/assets/yubikey5.png?raw=true]]
-
 ** YubiKey Firmware
 The firmware of a YubiKey can not be changed (it's read-only). This means that when new features become available, you would need to purchase that latest version of YubiKey. Also be aware of the firmware version when purchasing.
 
@@ -29,7 +30,7 @@ The firmware of a YubiKey can not be changed (it's read-only). This means that w
 There are many different YubIkey types and versions available. Check the [[https://support.yubico.com/hc/en-us/categories/360002541740-Devices][YubiKey devices]] webpage for further specifications.
 
 ** YubiKey 5 Pincodes
-The YubiKey 5 offers several  security protocols. Therefor multiple PIN codes needs to be set. In total, the YubiKey 5 has 5 PIN codes, 1 PUK admin code, and 1 Reset code.
+The YubiKey 5 offers several security applications. Each application is managed individually, and therefor multiple PIN codes needs to be set. In total, the YubiKey 5 has 5 PIN codes, 1 PUK admin code, and 1 Reset code.
 
 |-----------+--------------+--------------------------------------------------------------|
 | Interface | PINs         | Description                                                  |
@@ -38,15 +39,15 @@ The YubiKey 5 offers several  security protocols. Therefor multiple PIN codes ne
 |           |              | No default Pin                                               |
 |           |              | The PIN is set during the first time link to service         |
 |-----------+--------------+--------------------------------------------------------------|
-| GPG       | 2 PINs       | Encrypting, decrypting, signing, and SSH                     |
-|           | 1 Reset      | Defaults                                                     |
-|           |              | User Pin  : 123456                                           |
-|           |              | Admin PUK : 12345678                                         |
+| GPG       | 1 User PIN   | Encrypting, decrypting, signing, and SSH                     |
+|           | 1 Unlock PIN | Defaults                                                     |
+|           | 1 Admin PIN  | User Pin  : 123456                                           |
+|           |              | Admin Pin : 12345678                                         |
 |-----------+--------------+--------------------------------------------------------------|
 | PIV       | 2 PINs       | x509 certificates / keypairs. Bitlocker, Veracrypt, SSH, etc |
 |           | 1 Management | Defaults                                                     |
 |           |              | User Pin  : 123456                                           |
-|           |              | Admin PUK : 12345678                                         |
+|           |              | Admin Pin : 12345678                                         |
 |-----------+--------------+--------------------------------------------------------------|
 
 * Prerequisites
@@ -81,8 +82,8 @@ Withe the software installed, plug in the ~YubiKey~ and check the type and firmw
 #+end_src
 
 * Configuration
-
-Configuring the YubiKey is a straight forward process with the help of the ~yubikey-manager~ python library. It contains command sections that assist with the configuration modes:
+A YubiKey has different applications (modes) that can be enabled / disabled / configured and reset individually.
+The ~yubikey-manager~ python library is used to configure all aspects of the YubiKey. It contains sections to configure the application:
 
 | info    | show general information                              |
 | list    | list connected YubiKeys                               |
@@ -95,8 +96,34 @@ Configuring the YubiKey is a straight forward process with the help of the ~yubi
 | otp     | manage the YubiOTP application                        |
 | piv     | manage the PIV application                            |
 
-These notes provide some sample scripts to setup your assumed new ~5-Series YubiKey~.
+The following notes provide sample scripts to configure a ~5-Series YubiKey~.
+** Master Lock Code
+There is one PIN that rules them all. The YubiKey has a master ~config~ application that allows enabling or disabling each individual application on the YubiKey. When an application is disabled, its configuration and secrets cannot be accessed or changed — or wiped. This is particularly important to take note of, since otherwise wiping an application's config and secrets (aka a “factory reset”) does not require the application's own PIN or passphrase.
+
+The YubiKey provides a 128-bit ~lock code~ to protect changes to this master config app. By default, YubiKey comes with no lock code set. However, in order to prevent an adversary who gains access to a computer while a YubiKey is plugged in from being able to lock you out of all your YubiKey secrets, a master ~lock code~ should be set.
+
+The ~lock-code~ is a string of 32 hex digits. Run the following command to set the lock code for the YubiKey to a new random number:
+
+#+begin_src shell
+  ykman config set-lock-code --generate
+  # Using a randomly generated lock code: dac67aece839402edca8272528e837a6
+  # Lock configuration with this lock code? [y/N]:
+  y
+#+end_src
+
+The ~lock-code~ is required every time an application is enabled / disabled.
+
 ** Reseting YubiKey
+It is not possible to ~reset~ the entire YubiKey to factory defaults with a single command.
+Instead each mode provides an individual reset function, that only removes the setting / keys/ etc of that mode.
+You require your PUK to reset each mode.
+
+#+begin_src shell
+  ykman -f fido reset         # wipes all FIDO credentials on the YubiKey, including FIDO U2F credentials, and removes the PIN code
+  ykman -f oath reset         # wipes all accounts and restores factory settings
+  ykman -f openpgp reset      # wipes all OpenPGP data, and sets all PINs to their default values
+  ykman -f piv reset          # wipes all data and restores factory settings for the PIV application
+#+end_src
 ** Configure YubiKey for OpenPGP
 *** Enable OpenPGP Mode
 The enable OpenPGP mode on ~YubiKey~ execute the following commands:
@@ -104,6 +131,7 @@ The enable OpenPGP mode on ~YubiKey~ execute the following commands:
 #+begin_src shell
   ykman config usb -f -e OPENPGP
 #+end_src
+
 *** Enable Key Derived Function (KDF)
 Key Derived Function enables YubiKey to store the hash of a PIN rather than the PIN itself, preventing the PIN to be transfered in plan text.
 
@@ -116,6 +144,62 @@ NOTE: KDF must be enabled BEFORE changing the PINs or moving sub-keys to YubiKey
   gpg/card> kdf-setup
   # Enabling KDF ensures PIN is not stored on the YubiKey, only its hash. It needs to be done before changing PIN. More.
 #+end_src
+
+*** Configure PIN codes
+The OpenPGP app has 3 PINs:
+1. User PIN,
+2. Reset PIN (aka PUK, PIN Unblock Key),
+3. Admin PIN.
+The user PIN is used for day-to-day access to OpenPGP private keys.
+The reset PIN is not necessary as it can be controlled by the admin PIN.
+The admin PIN is used to change the settings of the OpenPGP app itself (and to unblock or change the user PIN if is forgotten or entered incorrectly too many times).
+When prompted to enter a “PIN” with no “admin” qualifier, this usually means to enter the user PIN, not the admin PIN.
+
+#+begin_src shell
+  gpg --edit-card
+  gpg/card> admin
+  gpg/card> passwd
+  # gpg: OpenPGP card no. ABCDE123456789000006123456780000 detected
+  # 1 - change PIN
+  # 2 - unblock PIN
+  # 3 - change Admin PIN
+  # 4 - set the Reset Code
+  # Q - quit
+  # Your selection?
+  1
+#+end_src
+
+Enter 1 at the prompt for the passwd command, and enter 123456 at the first PIN prompt (the default user PIN is 123456).
+Next, enter the new user PIN (prompted twice). Do not use a number — instead use a simple passphrase (like "horse apple garden") that’s at least 6 characters long and easy to type (required several times a day). Make sure it’s different than any other PIN or passphrase ever used before.
+
+#+begin_src shell
+  Your selection? 1
+  # PIN changed.
+  # 1 - change PIN
+  # 2 - unblock PIN
+  # 3 - change Admin PIN
+  # 4 - set the Reset Code
+  # Q - quit
+  # Your selection?
+#+end_src
+
+Next, enter 3 to set the admin PIN, and enter 12345678 at the first PIN prompt (the default admin PIN is 12345678).
+Next, enter the new admin PIN (prompted twice). Like with the user PIN above, do not use a number — instead use a simple passphrase at least 8 characters long. It doesn’t need to be any stronger than the user PIN, just different (enough so that an adversary wouldn’t be able to guess the admin PIN if she finds out your user PIN).
+
+#+begin_src shell
+  Your selection? 3
+  # PIN changed.
+
+  # 1 - change PIN
+  # 2 - unblock PIN
+  # 3 - change Admin PIN
+  # 4 - set the Reset Code
+  # Q - quit
+
+  Your selection? q
+#+end_src
+
+Backup the PIN codes (see [[#Backup PINS and PUKS and Lock-Code]])
 
 *** Transfer GPG sub-keys to YubiKey
 Assuming you have generated the necessary GPG key-chain using the [[https://github.com/user/pure-security/blob/main/scripts/gpg-provision.py][gpg-provision.py]] script, the gpg key-chain is stored in the ~/tmp/gpg_xxxxx~ folder.
@@ -176,6 +260,7 @@ From here use the GnuPG utility to edit the key, select the key, and send to car
 
   # Note: the local copy of the secret key will only be deleted with "save".
 
+  gpg> key 1
 
   gpg> key 2
 
@@ -207,6 +292,8 @@ From here use the GnuPG utility to edit the key, select the key, and send to car
   # [ultimate] (1). user <user@email.com>
 
   # Note: the local copy of the secret key will only be deleted with "save".
+
+  gpg> key 2
 
   gpg> key 3
 
@@ -303,6 +390,7 @@ To test the functionality of encryption and decryption test the YubKey with the 
   [user@archlinux ~]$ pass test
   # a=l~65v1d#c"L)O%99_zEotE4YY60Pm=
 #+end_src
+
 ** Configure YubiKey on another machine
 Assuming that no existing GPG keys exist on the machine, follow to following steps to setup GnuPG to use an existing (configured) YubiKey on a new computer.
 *** Import public key
@@ -357,4 +445,23 @@ Once the public key has been imported, the gpg stubs can be created with the fol
   #                                 card-no: 0006 25087512
   # ssb>  ed25519/952E563E4CEB347B  created: 2024-06-30  expires: never
   #                                 card-no: 0006 25087512
+#+end_src
+
+** Backup PINS and PUKS and Lock-Code
+After the completion of the YubiKey configuration write down and store safely all PIN, PUK and Lock codes.
+Note that a password manager might not be accessible if a PIN / PUK is no longer known.
+#+begin_src
+  YubiKey Serial Number:  1234578
+  Nickname:               YUBIKEY1
+  Config lock code:       dac67aece839402edca8272528e837a6
+  OpenPGP master key ID:  0x012345678ABCDE12
+  OpenPGP user PIN:       difficult password
+  OpenPGP admin PIN:      difficult password
+  PIV PIN:                password
+  PIV PUK:                password
+  FIDO PIN:               difficult password
+  OATH password:          difficult password
+  OTP slot 1:             private laptop
+  OTP slot 1 access code: 123456789abc
+  OTP slot 1 secret:      difficult password
 #+end_src
