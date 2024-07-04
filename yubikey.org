@@ -114,16 +114,16 @@ The ~lock-code~ is a string of 32 hex digits. Run the following command to set t
 The ~lock-code~ is required every time an application is enabled / disabled.
 
 ** Reseting YubiKey
-It is not possible to ~reset~ the entire YubiKey to factory defaults with a single command.
-Instead each mode provides an individual reset function, that only removes the setting / keys/ etc of that mode.
-You require your PUK to reset each mode.
+It is not possible to ~factory reset~ the entire YubiKey with a single command.
+Instead each application provides an individual reset function, that only wipes the setting / keys / etc of that application. You require the application's ~admin PIN~  to reset the application.
 
 #+begin_src shell
-  ykman -f fido reset         # wipes all FIDO credentials on the YubiKey, including FIDO U2F credentials, and removes the PIN code
-  ykman -f oath reset         # wipes all accounts and restores factory settings
   ykman -f openpgp reset      # wipes all OpenPGP data, and sets all PINs to their default values
+  ykman -f fido reset         # wipes all FIDO, FIDO U2F credentials and removes the PIN code
+  ykman -f oath reset         # wipes all accounts and restores factory settings
   ykman -f piv reset          # wipes all data and restores factory settings for the PIV application
 #+end_src
+
 ** Configure YubiKey for OpenPGP
 *** Enable OpenPGP Mode
 The enable OpenPGP mode on ~YubiKey~ execute the following commands:
@@ -201,7 +201,7 @@ Next, enter the new admin PIN (prompted twice). Like with the user PIN above, do
 
 Backup the PIN codes (see [[#Backup-PINS-and-PUKS-and-Lock-Code][Backup PINS]])
 
-*** Transfer GPG sub-keys to YubiKey
+*** (optional) Transfer GPG sub-keys to YubiKey
 Assuming you have generated the necessary GPG key-chain using the [[https://github.com/user/pure-security/blob/main/scripts/gpg-provision.py][gpg-provision.py]] script, the gpg key-chain is stored in the ~/tmp/gpg_xxxxx~ folder.
 To instruct the GnuPG utility where the gpg-keychain is stored, execute the following pointing to the correct folder:
 
@@ -327,6 +327,135 @@ From here use the GnuPG utility to edit the key, select the key, and send to car
   # Note: the local copy of the secret key will only be deleted with "save".
 
   gpg> save
+#+end_src
+
+*** (optional) Create GPG sub-keys in YubiKey
+As an alternative to creating GPG keys with the GnuPG utility, the GPG keys can be created directly on the YubiKey device. This is the safest method of creating GPG keys, as the key never leaves the device itself. Note however, that the YubiKey generated GPG keys can not be backed up. In other words, when the YubiKey is lost or compromised, all access to services is compromised as well.
+
+Use the key-attr command so that when you generate your keys, it will generate Curve 25519 keys instead of RSA keys:
+
+#+begin_src shell
+  gpg --edit-card
+  gpg/card> admin
+  gpg/card> key-attr
+  # Changing card key attribute for: Signature key
+  # Please select what kind of key you want:
+  #    (1) RSA
+  #    (2) ECC
+  # Your selection?
+#+end_src
+
+Select the ECC option:
+
+#+begin_src shell
+  Your selection? 2
+  # Please select which elliptic curve you want:
+  #    (1) Curve 25519
+  #    (4) NIST P-384
+  # Your selection?
+#+end_src
+
+Select Curve 25519:
+
+#+begin_src shell
+  # Your selection? 1
+  # The card will now be re-configured to generate a key of type: ed25519
+  # Note: There is no guarantee that the card supports the requested size.
+  #       If the key generation does not succeed, please check the
+  #       documentation of your card to see what sizes are allowed.
+#+end_src
+
+Enter the admin PIN when prompted to save your changes for that key. Select the same options (ECC and Curve 25519) as the prompts continue for the encryption key and authentication key:
+
+#+begin_src shell
+  # Changing card key attribute for: Encryption key
+  # Please select what kind of key you want:
+  #    (1) RSA
+  #    (2) ECC
+  Your selection? 2
+  # Please select which elliptic curve you want:
+  #    (1) Curve 25519
+  #    (4) NIST P-384
+  Your selection? 1
+  # The card will now be re-configured to generate a key of type: cv25519
+  # Changing card key attribute for: Authentication key
+  # Please select what kind of key you want:
+  #    (1) RSA
+  #    (2) ECC
+  Your selection? 2
+  # Please select which elliptic curve you want:
+  #    (1) Curve 25519
+  #    (4) NIST P-384
+  Your selection? 1
+  # The card will now be re-configured to generate a key of type: ed25519
+  # gpg/card>
+#+end_src
+
+Next, generate a new set of OpenPGP keys on the YubiKey, using the generate command:
+
+#+begin_src shell
+  gpg/card> generate
+  # Make off-card backup of encryption key? (Y/n)
+#+end_src
+
+Enter n to ensure that the private keys never leave the YubiKey, and enter the admin PIN when prompted:
+
+#+begin_src shell
+  Make off-card backup of encryption key? (Y/n) n
+
+  # Please note that the factory settings of the PINs are
+  #    PIN = '123456'     Admin PIN = '12345678'
+  # You should change them using the command --change-pin
+
+  # Please specify how long the key should be valid.
+  #          0 = key does not expire
+  #       <n>  = key expires in n days
+  #       <n>w = key expires in n weeks
+  #       <n>m = key expires in n months
+  #       <n>y = key expires in n years
+  # Key is valid for? (0)
+#+end_src
+
+Then enter 0 to prevent the keys from expiring:
+
+#+begin_src shell
+  Key is valid for? (0) 0
+  # Key does not expire at all
+  Is this correct? (y/N) y
+
+  # GnuPG needs to construct a user ID to identify your key.
+
+  # Real name:
+#+end_src
+
+When prompted for real name, email address, and comment, use the “real name” field for the display name or alias associated with the OpenPGP key, the “email address” field for the email account associated with the key, and the “comment” field for a word or phrase that will distinguish this key from other keys. For example, I might enter the following for real name, email address, and comment:
+
+#+begin_src shell
+  Real name: user
+  Email address: user@email.com
+  Comment: YubiKey1
+  #You selected this USER-ID:
+    "user (YubiKey1) <user@email.com>"
+
+  Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? o
+#+end_src
+
+Enter the admin PIN, and then the user PIN. The ID of the newly generated master key will be printed:
+
+#+begin_src shell
+  # gpg: key 0xABCDEF1234567890 marked as ultimately trusted
+  # gpg: revocation certificate stored as '/home/user/.gnupg/openpgp-revocs.d/1234567890ABCDEF1234567890ABCDEF12345678.rev'
+  # public and secret key created and signed.
+  gpg/card>
+#+end_src
+
+#+begin_src shell
+  gpg/card> quit
+  # pub   ed25519/0xABCDEF1234567890 2023-01-01 [SC]
+  #       1234567890ABCDEF1234567890ABCDEF12345678
+  # uid                   [ultimate] user (YubiKey1) <user@email.com>
+  # sub   ed25519/0xFEDCBA0987654321 2023-01-01 [A]
+  # sub   cv25519/0x1234567890ABCDEF 2023-01-01 [E]
 #+end_src
 
 *** Validate GPG sub-keys transfer to YubiKey
