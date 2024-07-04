@@ -199,7 +199,7 @@ Next, enter the new admin PIN (prompted twice). Like with the user PIN above, do
   Your selection? q
 #+end_src
 
-Backup the PIN codes (see [[#Backup-PINS-and-PUKS-and-Lock-Code][Backup PINS]
+Backup the PIN codes (see [[#Backup-PINS-and-PUKS-and-Lock-Code][Backup PINS]])
 
 *** Transfer GPG sub-keys to YubiKey
 Assuming you have generated the necessary GPG key-chain using the [[https://github.com/user/pure-security/blob/main/scripts/gpg-provision.py][gpg-provision.py]] script, the gpg key-chain is stored in the ~/tmp/gpg_xxxxx~ folder.
