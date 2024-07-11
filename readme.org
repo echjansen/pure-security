@@ -430,3 +430,56 @@ script output:
   # <Slot 'ECC Key 15|b'''>
   # <Slot 'ECC Key 16|b'''>
 #+end_src
+
+** Using GPG
+*** Using GPG with SSH authentication
+Although one can choose to use SSH generated keys for SSH authentication, it does mean another set of keys to manage.
+Since we went through all the trouble to create, backup and secure our GPG keys, we might as well use them for SSH authentication purposes.
+
+First we need to get a hnadle on the Authentication key-grip:
+#+begin_src shell
+  gpg --list-keys --with-keygrip
+  # /home/user/.gnupg/pubring.kbx
+  # ----------------------------------
+  # pub   ed25519 2024-06-30 [C]
+  #       XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+  #       Keygrip = 0000000000000000000000000000000000000000
+  # uid           [ultimate] user <user@email.com>
+  # sub   ed25519 2024-06-30 [S]
+  #       Keygrip = 1111111111111111111111111111111111111111
+  # sub   cv25519 2024-06-30 [E]
+  #       Keygrip = 2222222222222222222222222222222222222222
+  # sub   ed25519 2024-06-30 [A]
+  #       Keygrip = 3333333333333333333333333333333333333333
+#+end_src
+
+Copy the keygrip from the [A] authentication sub-key (although technically the sign key can be taken as well - for instance when using the keys using OnleyKey), and copy them into the ~sshcontrol~ from GnuPG:
+
+#+begin_src shell
+  echo 3333333333333333333333333333333333333333 > ~/.gnupg/sshcontrol
+#+end_src
+
+Append the following to the ~.bashrc~  or ~.zshrc~ file:
+
+#+begin_src shell
+    # GPG for SSH Authentication
+    unset SSH_AGENT_PID
+    if [ "${gnupg_SSH_AUTH_SOCK_by:-0}" -ne $$ ]; then
+      export SSH_AUTH_SOCK="$(gpgconf --list-dirs agent-ssh-socket)"
+    fi
+#+end_src
+
+Append the following to the ~.ssh/config~ file:
+
+#+begin_src shell
+    Match host * exec "gpg-connect-agent UPDATESTARTUPTTY /bye"
+#+end_src
+
+Restart the system or service.
+
+Obtain the public key to register with the server or services:
+
+#+begin_src shell
+  ssh-add -L
+  # ssh-ed25519 00000000000000000000000000000000000000000000000000000000000000000000
+#+end_src
